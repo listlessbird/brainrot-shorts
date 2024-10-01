@@ -26,9 +26,8 @@ import {
 } from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 
-import { createVideoScriptAction } from "@/app/(video)/action";
+import { useVideoConfigMutation } from "@/app/(video)/use-video-config-mutation";
 
 const groups = [
   {
@@ -48,7 +47,6 @@ const groups = [
     src: "/pixel.jpg",
   },
 ];
-
 export function VideoConfigForm() {
   const form = useForm<CreateVideoScriptConfig>({
     resolver: zodResolver(createVideConfigSchema),
@@ -59,13 +57,16 @@ export function VideoConfigForm() {
     },
   });
 
+  const { mutate, isPending } = useVideoConfigMutation();
+
   const onSubmit = async (values: CreateVideoScriptConfig) => {
     console.log("Video Config:", values);
-    // TODO: Save video configuration to the database
-    // or send it to the server for processing
 
-    const script = await createVideoScriptAction(values);
-    console.log(script);
+    mutate(values, {
+      onSuccess(data, variables, context) {
+        console.log("data", data);
+      },
+    });
 
     form.reset();
     // ...
@@ -133,7 +134,7 @@ export function VideoConfigForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-[60%]">
+        <Button type="submit" className="w-[60%]" disabled={isPending}>
           Submit
         </Button>
       </form>

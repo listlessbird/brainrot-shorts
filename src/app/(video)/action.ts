@@ -6,14 +6,13 @@ import {
 } from "@/lib/validations";
 
 import { generateObject } from "ai";
-import { createOpenAI as createGroq } from "@ai-sdk/openai";
 import { z } from "zod";
 
-const groq = createGroq({
-  baseURL: "https://api.groq.com/openai/v1",
-  apiKey: process.env.GROQ_API_KEY,
-});
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
   const validated = createVideConfigSchema.parse(values);
 
@@ -22,7 +21,9 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
   }
 
   const { object } = await generateObject({
-    model: groq("llama-3.1-70b-versatile"),
+    model: google("gemini-1.5-pro-latest", {
+      structuredOutputs: true,
+    }),
     schema: z.object({
       scenes: z.array(
         z.object({
