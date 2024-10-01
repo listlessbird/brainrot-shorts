@@ -20,10 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createVideConfigSchema } from "@/lib/validations";
+import {
+  createVideConfigSchema,
+  CreateVideoScriptConfig,
+} from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
+import { createVideoScriptAction } from "@/app/(video)/action";
 
 const groups = [
   {
@@ -45,7 +50,7 @@ const groups = [
 ];
 
 export function VideoConfigForm() {
-  const form = useForm<z.infer<typeof createVideConfigSchema>>({
+  const form = useForm<CreateVideoScriptConfig>({
     resolver: zodResolver(createVideConfigSchema),
     defaultValues: {
       duration: 30 * 1000,
@@ -54,10 +59,14 @@ export function VideoConfigForm() {
     },
   });
 
-  const onSubmit = () => {
-    console.log("Video Config:", form.getValues());
+  const onSubmit = async (values: CreateVideoScriptConfig) => {
+    console.log("Video Config:", values);
     // TODO: Save video configuration to the database
     // or send it to the server for processing
+
+    const script = await createVideoScriptAction(values);
+    console.log(script);
+
     form.reset();
     // ...
   };
