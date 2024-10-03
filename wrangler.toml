@@ -24,6 +24,10 @@ mode = "smart"
 [ai]
 binding = "AI"
 
+[[r2_buckets]]
+binding = 'CF_STORAGE'           # <~ valid JavaScript variable name
+bucket_name = 'brainrot-storage'
+
 # Bind a D1 database. D1 is Cloudflare’s native serverless SQL database.
 # Docs: https://developers.cloudflare.com/pages/functions/bindings/#d1-databases
 # [[d1_databases]]

@@ -29,6 +29,8 @@ import { useForm } from "react-hook-form";
 
 import { useVideoConfigMutation } from "@/app/(video)/use-video-config-mutation";
 
+import { testAction } from "@/app/(video)/test-action";
+
 const groups = [
   {
     value: "fairy-tale",
@@ -67,7 +69,7 @@ export function VideoConfigForm() {
         console.log("data", data);
       },
     });
-
+    // const r = await testAction(values);
     form.reset();
     // ...
   };
