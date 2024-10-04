@@ -12,8 +12,27 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 import { getRequestContext } from "@cloudflare/next-on-pages";
 
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+const { CF_ACCOUNT_ID, R2_ACCESS_KEY, R2_SECRET_KEY, BUCKET_NAME } =
+  process.env;
+
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
+});
+
+const r2 = new S3Client({
+  region: "auto",
+  endpoint: `https://${CF_ACCOUNT_ID!}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: R2_ACCESS_KEY!,
+    secretAccessKey: R2_SECRET_KEY!,
+  },
 });
 
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
@@ -59,24 +78,35 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
   console.log(speech);
 
   if (speech.audioContent) {
-    const key = crypto.randomUUID();
-
+    // const key = crypto.randomUUID();
+    const key = `speech/audio.mp3`;
     const binaryData = base64ToBlob(speech.audioContent, "audio/mpeg");
 
     console.log("binaryData", binaryData);
 
-    const stored = await cfEnv.CF_STORAGE.put(
-      `audio-${key.slice(0, 3)}.mp3`,
-      binaryData,
-      {
-        httpMetadata: {
-          contentType: "audio/mpeg",
-        },
-      }
-    );
-    console.log(stored);
+    // cant use this as it doesnt use remote storage while in dev :/
 
-    return object;
+    // const stored = await cfEnv.CF_STORAGE.put(key, binaryData, {
+    //   httpMetadata: {
+    //     contentType: "audio/mpeg",
+    //   },
+    // });
+    // console.log(stored);
+
+    const cmd = new PutObjectCommand({
+      Bucket: BUCKET_NAME!,
+      Key: key,
+      Body: binaryData,
+      ContentType: "audio/mpeg",
+    });
+
+    const response = await r2.send(cmd);
+    console.log(response);
+    const signedUrl = await makeSignedUrl(key, BUCKET_NAME!);
+
+    console.log(signedUrl);
+
+    return { ...object, signedUrl };
   }
   return object;
 }
@@ -143,4 +173,15 @@ function base64ToBlob(base64: string, mimeType: string) {
   }
   const byteArray = new Uint8Array(byteNumbers);
   return new Blob([byteArray], { type: mimeType });
+}
+
+async function makeSignedUrl(key: string, bucket: string, expiry = 3600) {
+  return await getSignedUrl(
+    r2,
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    }),
+    { expiresIn: expiry }
+  );
 }
