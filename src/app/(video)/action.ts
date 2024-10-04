@@ -21,17 +21,12 @@ const {
   R2_SECRET_KEY,
   BUCKET_NAME,
   ASSEMBLY_API_KEY,
+  GEMINI_API_KEY,
+  GOOGLE_API_KEY,
 } = process.env;
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-
-const transcriber = new AssemblyAI({
-  apiKey: ASSEMBLY_API_KEY!,
-});
-
-console.log(transcriber);
+const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
+const transcriber = new AssemblyAI({ apiKey: ASSEMBLY_API_KEY! });
 
 const r2 = new S3Client({
   region: "auto",
@@ -43,16 +38,54 @@ const r2 = new S3Client({
 });
 
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
-  const validated = createVideConfigSchema.parse(values);
+  console.log(
+    "Starting createVideoScriptAction",
+    JSON.stringify(values, null, 2)
+  );
 
-  if (!validated) {
-    throw Error("Invalid inputs");
+  try {
+    const validated = createVideConfigSchema.parse(values);
+    console.log("Input validation successful");
+
+    const { object, response } = await generateScriptWithAI(validated);
+    console.log(
+      "AI script generation complete",
+      JSON.stringify({ object, response }, null, 2)
+    );
+
+    const texts = object.scenes.map((s) => s.textContent).join("\n");
+    const speech = await synthesizeSpeech(texts, GOOGLE_API_KEY!);
+    console.log("Speech synthesis complete");
+
+    if (speech.audioContent) {
+      const { signedUrl, key } = await uploadAudioToR2(speech.audioContent);
+      console.log("Audio uploaded to R2", { signedUrl });
+
+      const captions = await generateCaptions(signedUrl);
+      console.log("Captions generated", captions);
+      console.log(captions.words);
+
+      if (captions.words) {
+        const captionUrl = await uploadCaptionsToR2(captions.words);
+        console.log("Captions uploaded to R2", { captionUrl });
+
+        return { ...object, captions: captionUrl, audio: captions };
+      }
+
+      return { ...object, audio: signedUrl };
+    }
+
+    return object;
+  } catch (error) {
+    console.error("Error in createVideoScriptAction", error);
+    throw error;
   }
+}
 
-  const { object, response } = await generateObject({
-    model: google("gemini-1.5-pro-latest", {
-      structuredOutputs: true,
-    }),
+async function generateScriptWithAI(validated: CreateVideoScriptConfig) {
+  console.log("Generating script with AI");
+  return generateObject({
+    model: google("gemini-1.5-pro-latest", { structuredOutputs: true }),
     schema: z.object({
       scenes: z.array(
         z.object({
@@ -62,147 +95,93 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
       ),
     }),
     messages: [
-      {
-        role: "system",
-        content: getSystemPrompt(),
-      },
-      {
-        role: "user",
-        content: buildPrompt(validated),
-      },
+      { role: "system", content: getSystemPrompt() },
+      { role: "user", content: buildPrompt(validated) },
     ],
   });
-
-  console.log(response);
-
-  console.log(object);
-
-  const texts = object.scenes.map((s) => s.textContent).join("\n");
-
-  const speech = await synthesizeSpeech(texts, process.env.GOOGLE_API_KEY!);
-  console.log(speech);
-
-  if (speech.audioContent) {
-    // const key = crypto.randomUUID();
-    const key = `speech/audio.mp3`;
-    const binaryData = base64ToBlob(speech.audioContent, "audio/mpeg");
-
-    console.log("binaryData", binaryData);
-
-    // cant use this as it doesnt use remote storage while in dev :/
-
-    // const stored = await cfEnv.CF_STORAGE.put(key, binaryData, {
-    //   httpMetadata: {
-    //     contentType: "audio/mpeg",
-    //   },
-    // });
-    // console.log(stored);
-
-    const cmd = new PutObjectCommand({
-      Bucket: BUCKET_NAME!,
-      Key: key,
-      Body: binaryData,
-      ContentType: "audio/mpeg",
-    });
-
-    const response = await r2.send(cmd);
-    console.log(response);
-    const signedUrl = await makeSignedUrl(key, BUCKET_NAME!);
-
-    console.log(signedUrl);
-
-    const captions = await transcriber.transcripts.transcribe({
-      audio_url: signedUrl,
-      speech_model: "nano",
-    });
-
-    console.log(captions);
-
-    if (captions.status === "error") {
-      console.error(captions.error);
-    }
-
-    if (captions.words) {
-      console.log(captions.words);
-
-      const captionKey = `transcriptions/audio.json`;
-
-      const captionCmd = new PutObjectCommand({
-        Bucket: BUCKET_NAME!,
-        Key: captionKey,
-        Body: JSON.stringify(captions.words, null, 2),
-        ContentType: "application/json",
-      });
-
-      const captionResponse = await r2.send(captionCmd);
-      console.log(captionResponse);
-
-      const signedCaptionUrl = await makeSignedUrl(captionKey, BUCKET_NAME!);
-
-      console.log(signedCaptionUrl);
-
-      return { ...object, captions: signedCaptionUrl, audio: captions };
-    }
-
-    return { ...object, audio: signedUrl };
-  }
-  return object;
-}
-
-function getSystemPrompt() {
-  return `
-
-        You're an expert at creating scripts for short videos.
-        For each scene you give imagePrompt and textContent.
-        Given a topic, duration and style you return script in the following json schema.
-
-        {
-            "scenes": [
-                {
-                    imagePrompt: "You describe the scene as an image prompt",
-                    textContent: "You describe the scene here in text"
-                }
-            ]
-        
-        }
-    `;
-}
-
-function buildPrompt({ duration, style, topic }: CreateVideoScriptConfig) {
-  return `
-        write a script to generate ${
-          duration / 1000
-        } second video on the topic: ${topic} 
-         along with ai image prompt in ${style} format.
-        For each scene give imagePrompt and textContent as fields in json format. 
-          
-          ONLY GIVE THE OUTPUT IN JSON FORMAT.
-    
-    `;
 }
 
 async function synthesizeSpeech(text: string, apiKey: string) {
+  console.log("Synthesizing speech");
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
-
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      // 'Content-Type': 'application/json',
-
-      "Content-Type": "application/json; charset=utf-8",
-      // Authorization: `Bearer ${apiKey}`,
-    },
+    headers: { "Content-Type": "application/json; charset=utf-8" },
     body: JSON.stringify({
       input: { text },
       voice: { languageCode: "en-US", ssmlGender: "FEMALE" },
       audioConfig: { audioEncoding: "MP3" },
     }),
   });
-
-  const json = await response.json();
-
-  return json as { audioContent: string };
+  return response.json() as Promise<{ audioContent: string }>;
 }
+
+async function uploadAudioToR2(audioContent: string) {
+  console.log("Uploading audio to R2");
+  const key = `speech/audio-${Date.now()}.mp3`;
+  // const binaryData = base64ToBlob(audioContent, "audio/mpeg");
+  const buffer = Buffer.from(audioContent, "base64");
+  const cmd = new PutObjectCommand({
+    Bucket: BUCKET_NAME!,
+    Key: key,
+    Body: buffer,
+    ContentType: "audio/mpeg",
+  });
+  await r2.send(cmd);
+  const signedUrl = await makeSignedUrl(key, BUCKET_NAME!);
+  return { signedUrl, key };
+}
+
+async function generateCaptions(audioUrl: string) {
+  console.log("Generating captions");
+  return await transcriber.transcripts.transcribe({
+    audio_url: audioUrl,
+    speech_model: "nano",
+  });
+}
+
+async function uploadCaptionsToR2(captions: any) {
+  console.log("Uploading captions to R2");
+  const captionKey = `transcriptions/audio.json`;
+  const captionCmd = new PutObjectCommand({
+    Bucket: BUCKET_NAME!,
+    Key: captionKey,
+    Body: JSON.stringify(captions, null, 2),
+    ContentType: "application/json",
+  });
+  await r2.send(captionCmd);
+  return makeSignedUrl(captionKey, BUCKET_NAME!);
+}
+
+function getSystemPrompt() {
+  return `
+    You're an expert at creating scripts for short videos.
+    For each scene you give imagePrompt and textContent.
+    Given a topic, duration and style you return script in the following json schema.
+
+    {
+        "scenes": [
+            {
+                imagePrompt: "You describe the scene as an image prompt",
+                textContent: "You describe the scene here in text"
+            }
+        ]
+    }
+  `;
+}
+
+function buildPrompt({ duration, style, topic }: CreateVideoScriptConfig) {
+  return `
+    write a script to generate ${
+      duration / 1000
+    } second video on the topic: ${topic} 
+    along with ai image prompt in ${style} format.
+    For each scene give imagePrompt and textContent as fields in json format. 
+    
+    ONLY GIVE THE OUTPUT IN JSON FORMAT.
+  `;
+}
+
 function base64ToBlob(base64: string, mimeType: string) {
   const byteCharacters = atob(base64);
   const byteNumbers = new Array(byteCharacters.length);
@@ -214,12 +193,7 @@ function base64ToBlob(base64: string, mimeType: string) {
 }
 
 async function makeSignedUrl(key: string, bucket: string, expiry = 3600) {
-  return await getSignedUrl(
-    r2,
-    new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    }),
-    { expiresIn: expiry }
-  );
+  return getSignedUrl(r2, new GetObjectCommand({ Bucket: bucket, Key: key }), {
+    expiresIn: expiry,
+  });
 }
