@@ -4,14 +4,10 @@ import {
   createVideConfigSchema,
   CreateVideoScriptConfig,
 } from "@/lib/validations";
-
 import { generateObject } from "ai";
 import { z } from "zod";
-
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-
-import { getRequestContext } from "@cloudflare/next-on-pages";
-
+import { AssemblyAI } from "assemblyai";
 import {
   GetObjectCommand,
   PutObjectCommand,
@@ -19,12 +15,23 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const { CF_ACCOUNT_ID, R2_ACCESS_KEY, R2_SECRET_KEY, BUCKET_NAME } =
-  process.env;
+const {
+  CF_ACCOUNT_ID,
+  R2_ACCESS_KEY,
+  R2_SECRET_KEY,
+  BUCKET_NAME,
+  ASSEMBLY_API_KEY,
+} = process.env;
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
+
+const transcriber = new AssemblyAI({
+  apiKey: ASSEMBLY_API_KEY!,
+});
+
+console.log(transcriber);
 
 const r2 = new S3Client({
   region: "auto",
@@ -36,8 +43,6 @@ const r2 = new S3Client({
 });
 
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
-  const cfEnv = getRequestContext().env;
-
   const validated = createVideConfigSchema.parse(values);
 
   if (!validated) {
@@ -106,7 +111,40 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
 
     console.log(signedUrl);
 
-    return { ...object, signedUrl };
+    const captions = await transcriber.transcripts.transcribe({
+      audio_url: signedUrl,
+      speech_model: "nano",
+    });
+
+    console.log(captions);
+
+    if (captions.status === "error") {
+      console.error(captions.error);
+    }
+
+    if (captions.words) {
+      console.log(captions.words);
+
+      const captionKey = `transcriptions/audio.json`;
+
+      const captionCmd = new PutObjectCommand({
+        Bucket: BUCKET_NAME!,
+        Key: captionKey,
+        Body: JSON.stringify(captions.words, null, 2),
+        ContentType: "application/json",
+      });
+
+      const captionResponse = await r2.send(captionCmd);
+      console.log(captionResponse);
+
+      const signedCaptionUrl = await makeSignedUrl(captionKey, BUCKET_NAME!);
+
+      console.log(signedCaptionUrl);
+
+      return { ...object, captions: signedCaptionUrl, audio: captions };
+    }
+
+    return { ...object, audio: signedUrl };
   }
   return object;
 }

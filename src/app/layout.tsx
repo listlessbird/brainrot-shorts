@@ -21,4 +21,4 @@ export default function RootLayout({
   );
 }
 
-export const runtime = "edge";
+// export const runtime = "nodejs";
