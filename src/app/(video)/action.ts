@@ -15,6 +15,8 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import Replicate from "replicate";
+import { Readable } from "node:stream";
+import { Upload } from "@aws-sdk/lib-storage";
 
 const {
   CF_ACCOUNT_ID,
@@ -72,12 +74,10 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
 
     const imagePrompts = object.scenes.map((s) => s.imagePrompt);
 
-    for (let i = 0; i < imagePrompts.length; i++) {
-      const prompt = imagePrompts[i];
-      await sendProgress(`Creating image ${i + 1} of ${imagePrompts.length}`);
-      console.log("creating image from prompt:", prompt);
-      // Create image from prompt
-    }
+    const images = await generateImages(imagePrompts);
+
+    console.log("image generations", images);
+
     if (speech.audioContent) {
       const { signedUrl, key } = await uploadAudioToR2(speech.audioContent);
       console.log("Audio uploaded to R2", { signedUrl });
@@ -93,10 +93,10 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
         return { ...object, captions: captionUrl, audio: captions };
       }
 
-      return { ...object, audio: signedUrl };
+      return { ...object, audio: signedUrl, images };
     }
 
-    return object;
+    return { ...object, images };
   } catch (error) {
     console.error("Error in createVideoScriptAction", error);
     throw error;
@@ -151,6 +151,47 @@ async function uploadAudioToR2(audioContent: string) {
   await r2.send(cmd);
   const signedUrl = await makeSignedUrl(key, BUCKET_NAME!);
   return { signedUrl, key };
+}
+
+async function uploadImageToR2(imageUrl: string, key: string) {
+  console.log("Uploading image to R2");
+
+  try {
+    const image = await fetch(imageUrl);
+
+    if (!image.ok) {
+      throw new Error(`Failed to fetch image: ${image.statusText}`);
+    }
+
+    const fileExtension = imageUrl.split(".").pop() || "jpg";
+
+    const contentType = image.headers.get("content-type");
+
+    const fileStream = Readable.from(image.body as any);
+
+    const newkey = `${key}.${fileExtension}`;
+
+    const upload = new Upload({
+      client: r2,
+      params: {
+        Bucket: BUCKET_NAME!,
+        Key: newkey,
+        Body: fileStream,
+        ContentType: contentType || "image/jpeg",
+      },
+    });
+
+    const result = await upload.done();
+
+    console.log("Image uploaded to R2", result);
+
+    const signedUrl = await makeSignedUrl(newkey, BUCKET_NAME!, 10 * 1000);
+    console.log("Signed URL", signedUrl);
+
+    return { signedUrl, key };
+  } catch (error) {
+    console.error("Error uploading image to R2", error);
+  }
 }
 
 async function generateCaptions(audioUrl: string) {
@@ -214,9 +255,35 @@ async function createImageFromPrompt(prompt: string) {
     "bytedance/sdxl-lightning-4step:5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637";
 
   // TODO: create a webhook
-  const out = await replicate.run(model, { input: { prompt, num_outputs: 1 } });
+  const out = await replicate.run(model, {
+    input: { prompt, num_outputs: 1, disable_safety_checker: true },
+  });
 
-  return out;
+  return out as string[];
+}
+
+async function generateImages(prompts: string[]) {
+  try {
+    const generations = [];
+
+    for (let i = 0; i < prompts.length; i++) {
+      const prompt = prompts[i];
+      await sendProgress(`Creating image ${i + 1} of ${prompts.length}`);
+      console.log("creating image from prompt:", prompt);
+      // Create image from prompt
+      const image = await createImageFromPrompt(prompt);
+      const outUrl = image[0];
+      const upload = await uploadImageToR2(
+        outUrl,
+        `images/generated-${Date.now()}`
+      );
+      generations.push(upload?.signedUrl);
+    }
+    return generations;
+  } catch (error) {
+    console.error("Error generating images", error);
+    throw error;
+  }
 }
 
 async function sendProgress(message: string) {
