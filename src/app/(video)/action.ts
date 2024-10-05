@@ -14,6 +14,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import Replicate from "replicate";
 
 const {
   CF_ACCOUNT_ID,
@@ -23,6 +24,7 @@ const {
   ASSEMBLY_API_KEY,
   GEMINI_API_KEY,
   GOOGLE_API_KEY,
+  REPLICATE_API_KEY,
 } = process.env;
 
 const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
@@ -37,6 +39,14 @@ const r2 = new S3Client({
   },
 });
 
+const replicate = new Replicate({
+  auth: REPLICATE_API_KEY!,
+});
+
+replicate.fetch = (url, options) => {
+  return fetch(url, { cache: "no-store", ...options });
+};
+
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
   console.log(
     "Starting createVideoScriptAction",
@@ -47,23 +57,34 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
     const validated = createVideConfigSchema.parse(values);
     console.log("Input validation successful");
 
+    await sendProgress("Generating script");
+
     const { object, response } = await generateScriptWithAI(validated);
     console.log(
       "AI script generation complete",
       JSON.stringify({ object, response }, null, 2)
     );
+    await sendProgress("Synthesizing speech");
 
     const texts = object.scenes.map((s) => s.textContent).join("\n");
     const speech = await synthesizeSpeech(texts, GOOGLE_API_KEY!);
     console.log("Speech synthesis complete");
 
+    const imagePrompts = object.scenes.map((s) => s.imagePrompt);
+
+    for (let i = 0; i < imagePrompts.length; i++) {
+      const prompt = imagePrompts[i];
+      await sendProgress(`Creating image ${i + 1} of ${imagePrompts.length}`);
+      console.log("creating image from prompt:", prompt);
+      // Create image from prompt
+    }
     if (speech.audioContent) {
       const { signedUrl, key } = await uploadAudioToR2(speech.audioContent);
       console.log("Audio uploaded to R2", { signedUrl });
 
       const captions = await generateCaptions(signedUrl);
       console.log("Captions generated", captions);
-      console.log(captions.words);
+      // console.log(captions.words);
 
       if (captions.words) {
         const captionUrl = await uploadCaptionsToR2(captions.words);
@@ -182,18 +203,28 @@ function buildPrompt({ duration, style, topic }: CreateVideoScriptConfig) {
   `;
 }
 
-function base64ToBlob(base64: string, mimeType: string) {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
-}
-
 async function makeSignedUrl(key: string, bucket: string, expiry = 3600) {
   return getSignedUrl(r2, new GetObjectCommand({ Bucket: bucket, Key: key }), {
     expiresIn: expiry,
+  });
+}
+
+async function createImageFromPrompt(prompt: string) {
+  const model =
+    "bytedance/sdxl-lightning-4step:5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637";
+
+  // TODO: create a webhook
+  const out = await replicate.run(model, { input: { prompt, num_outputs: 1 } });
+
+  return out;
+}
+
+async function sendProgress(message: string) {
+  await fetch("http://localhost:3000/api/progress/", {
+    method: "POST",
+    body: JSON.stringify({ message }),
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
 }

@@ -30,6 +30,8 @@ import { useForm } from "react-hook-form";
 import { useVideoConfigMutation } from "@/app/(video)/use-video-config-mutation";
 
 import { testAction } from "@/app/(video)/test-action";
+import { useState } from "react";
+import { ProgressDisplay } from "@/app/(video)/progress-display";
 
 const groups = [
   {
@@ -50,6 +52,8 @@ const groups = [
   },
 ];
 export function VideoConfigForm() {
+  const [stats, showStats] = useState(false);
+
   const form = useForm<CreateVideoScriptConfig>({
     resolver: zodResolver(createVideConfigSchema),
     defaultValues: {
@@ -62,11 +66,13 @@ export function VideoConfigForm() {
   const { mutate, isPending } = useVideoConfigMutation();
 
   const onSubmit = async (values: CreateVideoScriptConfig) => {
+    showStats(true);
     console.log("Video Config:", values);
 
     mutate(values, {
       onSuccess(data, variables, context) {
         console.log("data", data);
+        showStats(false);
       },
     });
     // const r = await testAction(values);
@@ -75,71 +81,75 @@ export function VideoConfigForm() {
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="topic"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Topic</FormLabel>
-              <FormControl>
-                <Textarea placeholder="topic for the video" {...field} />
-              </FormControl>
-              <FormDescription>The topic for the video</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="duration"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Duration</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value + ""}
-              >
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="topic"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Topic</FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a duration" />
-                  </SelectTrigger>
+                  <Textarea placeholder="topic for the video" {...field} />
                 </FormControl>
-                <SelectContent>
-                  {[30 * 1000, 60 * 1000].map((value, index) => (
-                    <SelectItem key={index} value={value + ""}>
-                      {value / 1000} seconds
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>The duration of the video</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormDescription>The topic for the video</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Duration</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value + ""}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a duration" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {[30 * 1000, 60 * 1000].map((value, index) => (
+                      <SelectItem key={index} value={value + ""}>
+                        {value / 1000} seconds
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>The duration of the video</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="style"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Video Style</FormLabel>
-              <FormControl>
-                <GroupSelect
-                  value={field.value}
-                  setGroup={field.onChange}
-                  groups={groups}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-[60%]" disabled={isPending}>
-          Submit
-        </Button>
-      </form>
-    </Form>
+          <FormField
+            control={form.control}
+            name="style"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Video Style</FormLabel>
+                <FormControl>
+                  <GroupSelect
+                    value={field.value}
+                    setGroup={field.onChange}
+                    groups={groups}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          {stats && <ProgressDisplay />}
+          <Button type="submit" className="w-[60%]" disabled={isPending}>
+            Submit
+          </Button>
+        </form>
+      </Form>
+    </>
   );
 }
