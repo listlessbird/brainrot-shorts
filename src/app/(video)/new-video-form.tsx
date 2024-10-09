@@ -71,7 +71,7 @@ export function VideoConfigForm() {
 
     mutate(values, {
       onSuccess(data, variables, context) {
-        console.log("data", data);
+        console.table(data);
         showStats(false);
       },
     });
