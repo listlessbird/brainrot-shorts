@@ -17,6 +17,13 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import Replicate from "replicate";
 import { Readable } from "node:stream";
 import { Upload } from "@aws-sdk/lib-storage";
+import {
+  getConfigByParams,
+  getGenerationByConfigId,
+  storeConfig,
+  storeGeneration,
+  storeScript,
+} from "@/db/db-fns";
 
 const {
   CF_ACCOUNT_ID,
@@ -71,12 +78,36 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
     const validated = createVideConfigSchema.parse(values);
     console.log("Input validation successful");
 
+    const existingConfig = await getConfigByParams(validated);
+    if (existingConfig) {
+      console.log("Existing configuration found");
+      const existingGeneration = await getGenerationByConfigId(
+        existingConfig.config.id
+      );
+      if (existingGeneration) {
+        console.log("Existing generation found, returning cached result");
+        return {
+          ...existingConfig.script?.script,
+          images: existingGeneration.images,
+          audio: existingGeneration.speechUrl,
+          captions: existingGeneration.captions_url,
+          sessionId: existingGeneration.id,
+        };
+      }
+    }
+
+    const configId = await storeConfig(sessionId, validated);
+    console.log("Stored configuration with ID:", configId);
+
     await sendProgress("Generating script");
     const { object } = await generateScriptWithAI(validated);
     console.log(
       "AI script generation complete",
       JSON.stringify({ object }, null, 2)
     );
+
+    const scriptId = await storeScript(object.scenes, configId);
+    console.log("Stored script with ID:", scriptId);
 
     const fullText = object.scenes.map((s) => s.textContent).join(" ");
 
@@ -90,8 +121,6 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
 
     console.log("Speech synthesis and image generation complete");
 
-    console.log(images);
-
     const audioUploadResult = await uploadAudioToR2(
       speech.audioContent,
       sessionId
@@ -103,12 +132,21 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
       ? await uploadCaptionsToR2(captions.words, sessionId)
       : null;
 
+    const generationId = await storeGeneration({
+      speechUrl: audioUploadResult.signedUrl,
+      captionsUrl: captionUrl,
+      images: images,
+      configId: configId,
+      scriptId: scriptId,
+    });
+    console.log("Stored generation with ID:", generationId);
+
     return {
       ...object,
       images,
       audio: audioUploadResult.signedUrl,
       captions: captionUrl,
-      sessionId,
+      sessionId: generationId,
     };
   } catch (error) {
     console.error("Error in createVideoScriptAction", error);
@@ -242,7 +280,6 @@ async function uploadCaptionsToR2(captions: any, sessionId: string) {
   return makeSignedUrl(captionKey, BUCKET_NAME!);
 }
 
-// Caption generation
 async function generateCaptions(audioUrl: string) {
   console.log("Generating captions");
   await sendProgress("Generating captions");
@@ -252,7 +289,6 @@ async function generateCaptions(audioUrl: string) {
   });
 }
 
-// Prompt generation functions
 function getSystemPrompt() {
   return `
     You're an expert at creating scripts for short videos.

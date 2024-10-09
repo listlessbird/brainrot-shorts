@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-export const generations = sqliteTable("generations", {
+export const generationsTable = sqliteTable("generations", {
   id: text("id").primaryKey(),
   createdAt: text("created_at")
     .notNull()
@@ -11,10 +11,11 @@ export const generations = sqliteTable("generations", {
     .notNull()
     .$type<string[]>()
     .default(sql`[]`),
-  configId: text("config_id").references(() => config.id),
+  configId: text("config_id").references(() => configTable.id),
+  scriptId: text("script_id").references(() => generatedScriptsTable.id),
 });
 
-export const config = sqliteTable("config", {
+export const configTable = sqliteTable("config", {
   id: text("id").primaryKey(),
   createdAt: text("created_at")
     .notNull()
@@ -25,4 +26,16 @@ export const config = sqliteTable("config", {
     .default(sql`30`),
   style: text("style").notNull(),
   //   promptId
+  scriptId: text("script_id").references(() => generatedScriptsTable.id),
+});
+
+export const generatedScriptsTable = sqliteTable("generated_script", {
+  id: text("id").primaryKey(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+  script: text("script", { mode: "json" })
+    .notNull()
+    .$type<{ imagePrompt: string; textContent: string }[]>()
+    .default(sql`[]`),
 });
