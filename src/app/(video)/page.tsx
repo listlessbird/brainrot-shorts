@@ -1,9 +1,13 @@
 import { VideoConfigForm } from "@/app/(video)/new-video-form";
 import { QueryProvider } from "@/app/query-provider";
+import { Header } from "@/components/nav/header";
+import { HeaderMobile } from "@/components/nav/header-mobile";
 
 export default function Home() {
   return (
     <QueryProvider>
+      <Header />
+      <HeaderMobile />
       <main className="min-h-screen max-w-2xl mx-auto pt-10">
         <div className="space-y-8">
           <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
