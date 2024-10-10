@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { db } from "@/db/db";
 import { configTable, generatedScriptsTable, generationsTable } from "./schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { CreateVideoScriptConfig } from "@/lib/validations";
 
 export async function storeConfig(
@@ -101,5 +101,57 @@ export async function getGenerationById(id: string) {
     .where(eq(generationsTable.id, id))
     .limit(1);
 
+  return result[0];
+}
+
+export async function getAllGenerations() {
+  const listGenerationsQuery = db
+    .select({
+      id: generationsTable.id,
+      createdAt: generationsTable.createdAt,
+      speechUrl: generationsTable.speechUrl,
+      captionsUrl: generationsTable.captions_url,
+      images: generationsTable.images,
+      configId: generationsTable.configId,
+      scriptId: generationsTable.scriptId,
+      topic: configTable.topic,
+      duration: configTable.duration,
+      style: configTable.style,
+      script: generatedScriptsTable.script,
+    })
+    .from(generationsTable)
+    .leftJoin(configTable, eq(generationsTable.configId, configTable.id))
+    .leftJoin(
+      generatedScriptsTable,
+      eq(generationsTable.scriptId, generatedScriptsTable.id)
+    )
+    .orderBy(desc(generationsTable.createdAt));
+
+  return listGenerationsQuery;
+}
+
+export async function getAllGenerationsByConfigId(configId: string) {
+  const result = await db
+    .select({
+      id: generationsTable.id,
+      createdAt: generationsTable.createdAt,
+      speechUrl: generationsTable.speechUrl,
+      captionsUrl: generationsTable.captions_url,
+      images: generationsTable.images,
+      configId: generationsTable.configId,
+      scriptId: generationsTable.scriptId,
+      topic: configTable.topic,
+      duration: configTable.duration,
+      style: configTable.style,
+      script: generatedScriptsTable.script,
+    })
+    .from(configTable)
+    .leftJoin(
+      generatedScriptsTable,
+      eq(generatedScriptsTable.id, configTable.scriptId)
+    )
+    .leftJoin(generationsTable, eq(generationsTable.configId, configTable.id))
+    .where(eq(configTable.id, configId))
+    .limit(1);
   return result[0];
 }

@@ -18,7 +18,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </h1>
             <VideoConfigForm />
           </div> */}
-          {children}
+          <div className="space-y-8  max-w-2xl mx-auto pt-5">{children}</div>
         </main>
       </div>
     </QueryProvider>
