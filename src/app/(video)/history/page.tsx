@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <div className="space-y-8  max-w-2xl mx-auto pt-5">
       <h1 className="scroll-m-20 text-2xl font-extrabold tracking-tight lg:text-5xl">
-        Ai shorts generator
+        Generations
       </h1>
       <VideoConfigForm />
     </div>
