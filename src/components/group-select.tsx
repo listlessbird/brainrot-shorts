@@ -21,7 +21,7 @@ export function GroupSelect<
   const [selected, setSelected] = useState<string>("");
 
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex gap-2 flex-wrap justify-around">
       {groups.map(({ src, value }) => (
         <div
           className={cn(
@@ -36,8 +36,8 @@ export function GroupSelect<
         >
           <Image
             src={src}
-            width={200}
-            height={200}
+            width={150}
+            height={150}
             alt={value}
             className={cn(
               "object-cover row-span-full col-start-1 group-hover:scale-110 z-[-1] transition-all rounded-md"
