@@ -38,10 +38,12 @@ function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
   };
 
   return (
-    <div className="">
-      <h1 className="text-3xl font-bold mb-4 text-center">{topic}</h1>
+    <div>
+      <h1 className="text-3xl font-bold mb-4 text-pretty capitalize truncate">
+        {topic}
+      </h1>
 
-      <div className="p-4 max-w-md mx-auto">
+      <div>
         <div className="mb-4 space-y-2 text-sm">
           <p>
             <span className="font-semibold">ID:</span> {id}
