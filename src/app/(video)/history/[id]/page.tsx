@@ -14,8 +14,6 @@ export default async function Generation({
 }) {
   const gen = await getGeneration(id);
 
-  //   console.log(gen);
-
   return (
     <>
       <GeneratedAsset asset={gen} />

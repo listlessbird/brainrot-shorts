@@ -108,16 +108,10 @@ export async function getAllGenerations() {
   const listGenerationsQuery = db
     .select({
       id: generationsTable.id,
-      createdAt: generationsTable.createdAt,
-      speechUrl: generationsTable.speechUrl,
-      captionsUrl: generationsTable.captions_url,
       images: generationsTable.images,
       configId: generationsTable.configId,
-      scriptId: generationsTable.scriptId,
       topic: configTable.topic,
       duration: configTable.duration,
-      style: configTable.style,
-      script: generatedScriptsTable.script,
     })
     .from(generationsTable)
     .leftJoin(configTable, eq(generationsTable.configId, configTable.id))

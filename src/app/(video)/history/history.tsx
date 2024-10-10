@@ -4,15 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { cache } from "react";
 
-// const generations = cache(async function () {
-//   const res = await getAllGenerations();
-//   return res;
-// });
+const allGenerations = cache(getAllGenerations);
 
 export async function History() {
-  const gen = await getAllGenerations();
-
-  console.log(gen);
+  const gen = await allGenerations();
 
   return (
     <>

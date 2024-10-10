@@ -1,10 +1,6 @@
 import { History } from "@/app/(video)/history/history";
-import { VideoConfigForm } from "@/app/(video)/new-video-form";
-import { QueryProvider } from "@/app/query-provider";
-import { Header } from "@/components/nav/header";
-import { HeaderMobile } from "@/components/nav/header-mobile";
-import { SideNav } from "@/components/nav/sidenav";
-
+import { Suspense } from "react";
+import Loading from "@/app/(video)/history/shell";
 export default function Home() {
   return (
     <div>
@@ -12,7 +8,11 @@ export default function Home() {
         Generations
       </h1>
       {/* <VideoConfigForm /> */}
-      <History />
+      <Suspense fallback={<Loading />}>
+        <div className="my-4">
+          <History />
+        </div>
+      </Suspense>
     </div>
   );
 }
