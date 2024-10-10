@@ -1,56 +1,31 @@
 import { getAllGenerationsByConfigId } from "@/db/db-fns";
-import { GenerationViewType, GeneratedAssetsType } from "@/types";
+import { GeneratedAssetType } from "@/types";
 import Image from "next/image";
 import { cache } from "react";
 
-import { Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// const generations = cache(async function () {
-//   const res = await getAllGenerations();
-//   return res;
-// });
+
+const getGeneration = cache(getAllGenerationsByConfigId);
 
 export default async function Generation({
   params: { id },
 }: {
   params: { id: string };
 }) {
-  const gen = await getAllGenerationsByConfigId(id);
+  const gen = await getGeneration(id);
 
   //   console.log(gen);
 
   return (
     <>
-      <VideoSessionDisplay assets={gen} />
-      {/* <div>
-        <p>{id}</p>
-      </div>
-      <pre>
-        <code>{JSON.stringify(gen, null, 2)}</code>
-      </pre> */}
+      <GeneratedAsset asset={gen} />
     </>
   );
 }
 
-// function GenerationsPreview({
-//   generation,
-// }: {
-//   generation: GenerationViewType[number];
-// }) {
-//   return (
-//     <div className="max-w-sm">
-//       <Image src={generation.images[0]} alt="image" width={250} height={250} />
-//       <div className="space-y-2">
-//         <h2 className="text-xl font-bold truncate">{generation.topic}</h2>
-//         <p className="text-sm">{generation?.duration / 1000} seconds</p>
-//       </div>
-//     </div>
-//   );
-// }
-
-const VideoSessionDisplay = ({ assets }: { assets: GeneratedAssetsType }) => {
+function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
   const { id, createdAt, topic, duration, style, script, images, speechUrl } =
-    assets;
+    asset;
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -131,4 +106,4 @@ const VideoSessionDisplay = ({ assets }: { assets: GeneratedAssetsType }) => {
       </div>
     </div>
   );
-};
+}
