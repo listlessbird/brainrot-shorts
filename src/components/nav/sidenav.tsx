@@ -7,7 +7,7 @@ import { SideNavItems, SideNavItem } from "@/components/nav/constants";
 import { cn } from "@/lib/utils";
 export function SideNav() {
   return (
-    <div className="md:w-16 lg:w-60 bg-white h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex">
+    <div className="md:w-16 lg:w-60 bg-background h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex shadow-md">
       <div className="flex flex-col space-y-6 w-full">
         <Link
           href="/"
@@ -35,7 +35,7 @@ const MenuItem = ({ item }: { item: SideNavItem }) => {
       <Link
         href={item.path}
         className={cn(
-          `flex flex-row space-x-4 items-center p-2 rounded-lg hover:bg-zinc-100`,
+          `flex flex-row space-x-4 items-center p-2 rounded-lg hover:bg-accent`,
           item.path === pathname && "bg-zinc-100"
         )}
         title={item.title}
