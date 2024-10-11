@@ -2,10 +2,35 @@ import { getAllGenerationsByConfigId } from "@/db/db-fns";
 import { GeneratedAssetType } from "@/types";
 import Image from "next/image";
 import { cache } from "react";
-
+import { r2, makeSignedUrl } from "@/lib/r2";
 import { Button } from "@/components/ui/button";
 
-const getGeneration = cache(getAllGenerationsByConfigId);
+const getGeneration = cache(async (id: string) => {
+  const generations = await getAllGenerationsByConfigId(id);
+  const imagePresigningPromises = (generations.images || []).map(
+    async (image) => {
+      const keyFromImage = `${generations.configId}/images/${image
+        .split("/")
+        .pop()}`;
+      return makeSignedUrl(r2, keyFromImage);
+    }
+  );
+
+  const speechKey = generations.speechUrl
+    ? `${generations.configId}/speech/${generations.speechUrl.split("/").pop()}`
+    : null;
+
+  const [presignedImages, presignedSpeechUrl] = await Promise.all([
+    Promise.all(imagePresigningPromises),
+    speechKey ? makeSignedUrl(r2, speechKey) : null,
+  ]);
+
+  return {
+    ...generations,
+    images: presignedImages,
+    speechUrl: presignedSpeechUrl,
+  };
+});
 
 export default async function Generation({
   params: { id },

@@ -8,11 +8,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { AssemblyAI } from "assemblyai";
-import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import Replicate from "replicate";
 import { Readable } from "node:stream";
@@ -24,6 +20,7 @@ import {
   storeGeneration,
   storeScript,
 } from "@/db/db-fns";
+import { makeSignedUrl } from "@/lib/r2";
 
 const {
   CF_ACCOUNT_ID,
@@ -59,13 +56,6 @@ const sendProgress = async (message: string) => {
     headers: { "Content-Type": "application/json" },
   });
 };
-
-const makeSignedUrl = async (key: string, bucket: string, expiry = 3600) => {
-  return getSignedUrl(r2, new GetObjectCommand({ Bucket: bucket, Key: key }), {
-    expiresIn: expiry,
-  });
-};
-
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
   console.log(
     "Starting createVideoScriptAction",
@@ -225,7 +215,7 @@ async function uploadAudioToR2(audioContent: string, sessionId: string) {
     ContentType: "audio/mpeg",
   });
   await r2.send(cmd);
-  const signedUrl = await makeSignedUrl(key, BUCKET_NAME!);
+  const signedUrl = await makeSignedUrl(r2, key, BUCKET_NAME!);
   const url = `https://${BUCKET_NAME!}.r2.cloudflarestorage.com/${key}`;
   return { signedUrl, key, url };
 }
@@ -260,7 +250,7 @@ async function uploadImageToR2(
     });
 
     await upload.done();
-    const signedUrl = await makeSignedUrl(key, BUCKET_NAME!, 10 * 1000);
+    const signedUrl = await makeSignedUrl(r2, key, BUCKET_NAME!, 10 * 1000);
     const url = `https://${BUCKET_NAME!}.r2.cloudflarestorage.com/${key}`;
     return { signedUrl, key, url };
   } catch (error) {
@@ -279,7 +269,7 @@ async function uploadCaptionsToR2(captions: any, sessionId: string) {
     ContentType: "application/json",
   });
   await r2.send(captionCmd);
-  const signedUrl = await makeSignedUrl(captionKey, BUCKET_NAME!);
+  const signedUrl = await makeSignedUrl(r2, captionKey, BUCKET_NAME!);
   const url = `https://${BUCKET_NAME!}.r2.cloudflarestorage.com/${captionKey}`;
   return { signedUrl, url };
 }
