@@ -133,8 +133,8 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
       : null;
 
     const generationId = await storeGeneration({
-      speechUrl: audioUploadResult.signedUrl,
-      captionsUrl: captionUrl,
+      speechUrl: audioUploadResult.url,
+      captionsUrl: captionUrl?.url || null,
       images: images,
       configId: configId,
       scriptId: scriptId,
@@ -197,7 +197,7 @@ async function generateImages(prompts: string[], sessionId: string) {
     const image = await createImageFromPrompt(prompt);
     const outUrl = image[0];
     const upload = await uploadImageToR2(outUrl, sessionId, prompt);
-    return upload?.signedUrl;
+    return upload?.url;
   };
 
   const imagePromises = prompts.map((prompt, index) =>
@@ -226,7 +226,8 @@ async function uploadAudioToR2(audioContent: string, sessionId: string) {
   });
   await r2.send(cmd);
   const signedUrl = await makeSignedUrl(key, BUCKET_NAME!);
-  return { signedUrl, key };
+  const url = `https://${BUCKET_NAME!}.r2.cloudflarestorage.com/${key}`;
+  return { signedUrl, key, url };
 }
 
 async function uploadImageToR2(
@@ -260,7 +261,8 @@ async function uploadImageToR2(
 
     await upload.done();
     const signedUrl = await makeSignedUrl(key, BUCKET_NAME!, 10 * 1000);
-    return { signedUrl, key };
+    const url = `https://${BUCKET_NAME!}.r2.cloudflarestorage.com/${key}`;
+    return { signedUrl, key, url };
   } catch (error) {
     console.error("Error uploading image to R2", error);
     throw error;
@@ -277,7 +279,9 @@ async function uploadCaptionsToR2(captions: any, sessionId: string) {
     ContentType: "application/json",
   });
   await r2.send(captionCmd);
-  return makeSignedUrl(captionKey, BUCKET_NAME!);
+  const signedUrl = await makeSignedUrl(captionKey, BUCKET_NAME!);
+  const url = `https://${BUCKET_NAME!}.r2.cloudflarestorage.com/${captionKey}`;
+  return { signedUrl, url };
 }
 
 async function generateCaptions(audioUrl: string) {
