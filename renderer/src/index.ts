@@ -3,13 +3,10 @@ import { GeneratedAssetSchema } from "./schema";
 import { z } from "zod";
 import { bundle } from "@remotion/bundler";
 import { getCompositions, renderMedia } from "@remotion/renderer";
-import path from "path";
-import { RemotionRoot } from "./remotion/root";
-
-registerRoot(RemotionRoot);
+import path from "node:path";
 
 async function renderVideo(
-  data: z.infer<typeof GeneratedAssetSchema>,
+  data: z.infer<typeof GeneratedAssetSchema>
 ): Promise<string> {
   const validatedData = GeneratedAssetSchema.parse(data);
 
@@ -17,18 +14,22 @@ async function renderVideo(
   const captionsText = await captionsResponse.text();
   const captions = JSON.parse(captionsText);
 
-  const bundled = await bundle(path.join(import.meta.dir, "./index.ts"));
+  const bundled = await bundle({
+    entryPoint: path.join(process.cwd(), "./src/remotion/index.ts"),
+  });
 
   const comps = await getCompositions(bundled);
   const composition = comps.find((c) => c.id === "VideoGeneration");
 
   if (!composition) {
+    console.log({ comps, composition });
+
     throw new Error("Composition not found");
   }
 
   const outputLocation = path.join(
     import.meta.dir,
-    `../output/${validatedData.id}.mp4`,
+    `../output/${validatedData.id}.mp4`
   );
   await renderMedia({
     composition,

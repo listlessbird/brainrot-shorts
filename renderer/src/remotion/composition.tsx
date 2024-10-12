@@ -10,15 +10,17 @@ import {
 } from "remotion";
 
 import { z } from "zod";
-import { CaptionSchema } from "../schema";
 
-interface VideoComponentProps {
+import { CaptionSchema } from "../schema";
+import { defaultProps } from "./default";
+
+type VideoComponentProps = {
   topic: string;
   script: { textContent: string; imagePrompt: string }[];
   images: string[];
   speechUrl: string;
   captions: z.infer<typeof CaptionSchema>[];
-}
+};
 
 export const VideoComponent: React.FC<VideoComponentProps> = ({
   topic,
@@ -34,7 +36,7 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
     const timeInMs = (frame / fps) * 1000;
     return (
       captions.find(
-        (caption) => timeInMs >= caption.start && timeInMs <= caption.end,
+        (caption) => timeInMs >= caption.start && timeInMs <= caption.end
       ) || null
     );
   };
@@ -116,18 +118,24 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
   );
 };
 
-export const RemotionVideo: React.FC<VideoComponentProps> = (props) => {
-  const durationInSeconds =
-    props.captions[props.captions.length - 1].end / 1000;
+export const Root: React.FC = () => {
   return (
     <Composition
       id="VideoGeneration"
       component={VideoComponent}
-      durationInFrames={Math.ceil(durationInSeconds * 30)}
+      durationInFrames={300}
       fps={30}
       width={1920}
       height={1080}
-      defaultProps={props}
+      defaultProps={defaultProps}
+      calculateMetadata={async ({ props }) => {
+        const durationInSeconds =
+          props.captions[props.captions.length - 1].end / 1000;
+
+        return {
+          durationInFrames: Math.floor(durationInSeconds * 30),
+        };
+      }}
     />
   );
 };

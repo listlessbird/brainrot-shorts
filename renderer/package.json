@@ -1,10 +1,13 @@
 {
   "name": "renderer",
-  "version": "1.0.0",
-  "description": "video generator",
-  "repository": {},
-  "license": "UNLICENSED",
-  "private": true,
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
   "dependencies": {
     "@remotion/bundler": "4.0.221",
     "@remotion/cli": "4.0.221",
@@ -15,23 +18,5 @@
     "react-dom": "18.3.1",
     "remotion": "4.0.221",
     "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@remotion/eslint-config": "4.0.221",
-    "@types/react": "18.3.1",
-    "@types/web": "0.0.166",
-    "eslint": "8.56.0",
-    "prettier": "3.3.3",
-    "typescript": "5.6.2",
-    "bun-types": "latest"
-  },
-  "scripts": {
-    "start": "remotion studio",
-    "build": "remotion render HelloWorld out/video.mp4",
-    "upgrade": "remotion upgrade",
-    "test": "eslint src --ext ts,tsx,js,jsx && tsc"
-  },
-  "sideEffects": [
-    "*.css"
-  ]
+  }
 }
