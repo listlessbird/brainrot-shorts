@@ -18,9 +18,10 @@ export const GeneratedAssetSchema = z.object({
     z.object({
       textContent: z.string(),
       imagePrompt: z.string(),
-    }),
+    })
   ),
   images: z.array(z.string()),
   speechUrl: z.string(),
   captionsUrl: z.string(),
+  configId: z.string(),
 });

@@ -14,32 +14,39 @@ async function renderVideo(
   const captionsText = await captionsResponse.text();
   const captions = JSON.parse(captionsText);
 
+  const inputProps = {
+    ...validatedData,
+    captions,
+  };
+
   const bundled = await bundle({
     entryPoint: path.join(process.cwd(), "./src/remotion/index.ts"),
+    onProgress: (progress: number) => {
+      console.log(`Webpack bundling progress: ${progress}%`);
+    },
   });
 
-  const comps = await getCompositions(bundled);
+  const comps = await getCompositions(bundled, {
+    inputProps,
+  });
   const composition = comps.find((c) => c.id === "VideoGeneration");
 
+  console.log({ comps, composition });
   if (!composition) {
-    console.log({ comps, composition });
-
     throw new Error("Composition not found");
   }
 
   const outputLocation = path.join(
     import.meta.dir,
-    `../output/${validatedData.id}.mp4`
+    `../output/${validatedData.configId}.mp4`
   );
   await renderMedia({
     composition,
     serveUrl: bundled,
     codec: "h264",
     outputLocation,
-    inputProps: {
-      ...validatedData,
-      captions,
-    },
+    inputProps,
+    timeoutInMilliseconds: 10 * 1000,
   });
 
   return outputLocation;

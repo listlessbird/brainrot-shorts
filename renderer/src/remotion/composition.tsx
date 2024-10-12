@@ -47,15 +47,18 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
     return Math.floor((timeInMs / totalDuration) * script.length);
   };
 
+  const getDurationInFrame = () => {
+    const total = captions[captions.length - 1].end;
+    return (total / 1000) * fps;
+  };
+
   const currentCaption = getCurrentCaption(frame);
   const currentScriptIndex = getCurrentScriptIndex(frame);
   const currentImage = images[currentScriptIndex];
 
   return (
     <AbsoluteFill style={{ backgroundColor: "white" }}>
-      <Audio src={speechUrl} />
-
-      <Sequence from={0} durationInFrames={90}>
+      {/* <Sequence from={0} durationInFrames={90}>
         <h1
           style={{
             fontSize: 60,
@@ -68,35 +71,30 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
         >
           {topic}
         </h1>
-      </Sequence>
+      </Sequence> */}
 
-      <Img
-        src={currentImage}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          objectFit: "cover",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: 50,
-          left: 50,
-          right: 50,
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          padding: 20,
-          borderRadius: 10,
-        }}
-      >
-        <p style={{ color: "white", fontSize: 24, margin: 0 }}>
-          {script[currentScriptIndex].textContent}
-        </p>
-      </div>
+      {images.map((image, index) => {
+        return (
+          <>
+            <Sequence
+              key={index}
+              from={(index * getDurationInFrame()) / images.length}
+              durationInFrames={getDurationInFrame()}
+            >
+              <Img
+                src={image}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            </Sequence>
+          </>
+        );
+      })}
 
+      {speechUrl && <Audio src={speechUrl} />}
       {currentCaption && (
         <div
           style={{
@@ -109,7 +107,7 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
             padding: 10,
           }}
         >
-          <p style={{ color: "white", fontSize: 24, margin: 0 }}>
+          <p style={{ color: "white", fontSize: 28, margin: 0 }}>
             {currentCaption.text}
           </p>
         </div>
@@ -132,8 +130,13 @@ export const Root: React.FC = () => {
         const durationInSeconds =
           props.captions[props.captions.length - 1].end / 1000;
 
+        console.log({
+          props,
+          durationInSeconds,
+        });
+
         return {
-          durationInFrames: Math.floor(durationInSeconds * 30),
+          durationInFrames: 1000,
         };
       }}
     />
