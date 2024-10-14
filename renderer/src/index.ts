@@ -42,6 +42,7 @@ async function renderVideo(
     import.meta.dir,
     `../output/${validatedData.configId}.mp4`
   );
+
   await renderMedia({
     composition,
     serveUrl: bundled,
@@ -49,9 +50,35 @@ async function renderVideo(
     outputLocation,
     inputProps,
     timeoutInMilliseconds: 10 * 1000,
-    onProgress: ({ progress }) => {
-      console.log(`Rendering progress: ${progress}%`);
-      progressCallback(50 + progress * 50);
+    onProgress: ({
+      progress,
+      stitchStage,
+      renderedFrames,
+      renderedDoneIn,
+      encodedFrames,
+      encodedDoneIn,
+    }) => {
+      // console.log(`Rendering progress: ${progress}%`);
+      if (stitchStage === "encoding") {
+        // First pass, parallel rendering of frames and encoding into video
+        console.log("Encoding...");
+      } else if (stitchStage === "muxing") {
+        // Second pass, adding audio to the video
+        console.log("Muxing audio...");
+      }
+      // Amount of frames rendered into images
+      console.log(`${renderedFrames} rendered`);
+      // Amount of frame encoded into a video
+      console.log(`${encodedFrames} encoded`);
+      // Time to create images of all frames
+      if (renderedDoneIn !== null) {
+        console.log(`Rendered in ${renderedDoneIn}ms`);
+      }
+      // Time to encode video from images
+      if (encodedDoneIn !== null) {
+        console.log(`Encoded in ${encodedDoneIn}ms`);
+      }
+      progressCallback(50 + progress);
     },
   });
 
@@ -64,7 +91,7 @@ const server = Bun.serve({
     const url = new URL(req.url);
     const pathname = url.pathname;
 
-    if (req.method === "POST" && pathname === "/render") {
+    if (req.method === "POST" && pathname.startsWith("/render/")) {
       const body = await req.json();
       console.log(body);
 
@@ -113,7 +140,7 @@ const server = Bun.serve({
         return response;
       } catch (error) {
         console.error("Error setting up video rendering:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: error?.message }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
