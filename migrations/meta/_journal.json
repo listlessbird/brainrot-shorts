@@ -8,6 +8,13 @@
       "when": 1728469852942,
       "tag": "0000_freezing_black_bird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1728918628598,
+      "tag": "0001_parched_nicolaos",
+      "breakpoints": true
     }
   ]
 }

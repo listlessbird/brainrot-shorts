@@ -7,6 +7,7 @@ export const generationsTable = sqliteTable("generations", {
     .default(sql`(current_timestamp)`),
   speechUrl: text("speech_url").notNull(),
   captions_url: text("captions_url").notNull(),
+  video_url: text("video_url"),
   images: text("images", { mode: "json" })
     .notNull()
     .$type<string[]>()

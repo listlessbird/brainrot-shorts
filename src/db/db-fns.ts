@@ -131,6 +131,7 @@ export async function getAllGenerationsByConfigId(configId: string) {
       createdAt: generationsTable.createdAt,
       speechUrl: generationsTable.speechUrl,
       captionsUrl: generationsTable.captions_url,
+      videoUrl: generationsTable.video_url,
       images: generationsTable.images,
       configId: generationsTable.configId,
       scriptId: generationsTable.scriptId,

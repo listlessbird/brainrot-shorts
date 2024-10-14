@@ -27,18 +27,28 @@ const getGeneration = cache(async (id: string) => {
         .pop()}`
     : null;
 
-  const [presignedImages, presignedSpeechUrl, presignedCaptionsUrl] =
-    await Promise.all([
-      Promise.all(imagePresigningPromises),
-      speechKey ? makeSignedUrl(r2, speechKey) : null,
-      captionsKey ? makeSignedUrl(r2, captionsKey) : null,
-    ]);
+  const videoKey = generations.videoUrl
+    ? `${generations.configId}/video/${generations.videoUrl.split("/").pop()}`
+    : null;
+
+  const [
+    presignedImages,
+    presignedSpeechUrl,
+    presignedCaptionsUrl,
+    preSignedVideoUrl,
+  ] = await Promise.all([
+    Promise.all(imagePresigningPromises),
+    speechKey ? makeSignedUrl(r2, speechKey) : null,
+    captionsKey ? makeSignedUrl(r2, captionsKey) : null,
+    videoKey ? makeSignedUrl(r2, videoKey) : null,
+  ]);
 
   return {
     ...generations,
     images: presignedImages,
     speechUrl: presignedSpeechUrl,
     captionsUrl: presignedCaptionsUrl,
+    videoUrl: preSignedVideoUrl,
   };
 });
 
@@ -57,8 +67,17 @@ export default async function Generation({
 }
 
 function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
-  const { id, createdAt, topic, duration, style, script, images, speechUrl } =
-    asset;
+  const {
+    id,
+    createdAt,
+    topic,
+    duration,
+    style,
+    script,
+    images,
+    speechUrl,
+    videoUrl,
+  } = asset;
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -124,10 +143,20 @@ function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
           <div className="bg-white p-4 rounded-lg shadow">
             <audio controls className="w-full">
               <source src={speechUrl} type="audio/mpeg" />
-              Your browser does not support the audio element.
             </audio>
           </div>
         </div>
+
+        {videoUrl && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-2">Video</h2>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <video controls className="w-full">
+                <source src={videoUrl} type="video/mp4" />
+              </video>
+            </div>
+          </div>
+        )}
 
         <div className="text-center">
           <Button asChild>
