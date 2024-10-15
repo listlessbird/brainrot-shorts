@@ -9,7 +9,7 @@ export default function Home() {
       </h1>
       {/* <VideoConfigForm /> */}
       <Suspense fallback={<Loading />}>
-        <div className="my-4">
+        <div className="my-4 flex flex-wrap gap-2">
           <History />
         </div>
       </Suspense>

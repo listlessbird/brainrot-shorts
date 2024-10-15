@@ -41,7 +41,7 @@ function GenerationsPreview({
   generation: GenerationViewType[number];
 }) {
   return (
-    <Link href={`/history/${generation.configId}`}>
+    <Link href={`/history/${generation.configId}`} className="contents">
       <div className="max-w-sm bg-card p-4 rounded-lg shadow w-[min(200px,100%)]">
         <Image
           src={generation.images}
