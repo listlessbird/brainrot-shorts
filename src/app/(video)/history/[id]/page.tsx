@@ -3,11 +3,22 @@ import { GeneratedAssetType } from "@/types";
 import Image from "next/image";
 import { cache } from "react";
 import { r2, makeSignedUrl } from "@/lib/r2";
-import { Button } from "@/components/ui/button";
 import { Generate } from "@/app/(video)/history/[id]/generate";
+import { notFound } from "next/navigation";
 
 const getGeneration = cache(async (id: string) => {
   const generations = await getAllGenerationsByConfigId(id);
+
+  if (
+    !generations ||
+    !generations.configId ||
+    !generations.images ||
+    !generations.script ||
+    !generations.speechUrl
+  ) {
+    notFound();
+  }
+
   const imagePresigningPromises = (generations.images || []).map(
     async (image) => {
       const keyFromImage = `${generations.configId}/images/${image
@@ -61,7 +72,7 @@ export default async function Generation({
 
   return (
     <>
-      <GeneratedAsset asset={gen} />
+      <GeneratedAsset asset={gen!} />
     </>
   );
 }
@@ -104,7 +115,7 @@ function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
           </p>
           <p>
             <span className="font-semibold">Created:</span>{" "}
-            {formatDate(createdAt)}
+            {formatDate(createdAt!)}
           </p>
           <p>
             <span className="font-semibold">Duration:</span> {duration / 1000}{" "}
@@ -117,11 +128,11 @@ function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
 
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Script & Images</h2>
-          {script.map((item, index) => (
+          {script!.map((item, index) => (
             <div key={index} className="mb-4 bg-white p-4 rounded-lg shadow">
               <div className="flex flex-col md:flex-row items-start">
                 <Image
-                  src={images[index]}
+                  src={images![index]}
                   alt={`Scene ${index + 1}`}
                   className="w-1/3 h-auto rounded mr-4 "
                   width={200}
@@ -142,7 +153,7 @@ function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
           <h2 className="text-xl font-semibold mb-2">Audio</h2>
           <div className="bg-white p-4 rounded-lg shadow">
             <audio controls className="w-full">
-              <source src={speechUrl} type="audio/mpeg" />
+              <source src={speechUrl!} type="audio/mpeg" />
             </audio>
           </div>
         </div>

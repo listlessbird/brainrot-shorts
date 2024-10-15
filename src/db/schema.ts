@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 export const generationsTable = sqliteTable("generations", {
-  id: text("id").primaryKey(),
+  id: text("id").notNull().primaryKey(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
@@ -12,8 +12,12 @@ export const generationsTable = sqliteTable("generations", {
     .notNull()
     .$type<string[]>()
     .default(sql`[]`),
-  configId: text("config_id").references(() => configTable.id),
-  scriptId: text("script_id").references(() => generatedScriptsTable.id),
+  configId: text("config_id")
+    .notNull()
+    .references(() => configTable.id),
+  scriptId: text("script_id")
+    .notNull()
+    .references(() => generatedScriptsTable.id),
 });
 
 export const configTable = sqliteTable("config", {
