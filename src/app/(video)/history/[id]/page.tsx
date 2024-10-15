@@ -157,17 +157,19 @@ function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
             </div>
           </div>
         )}
-
+        {/* 
         <div className="text-center">
           <Button asChild>
             <a href={speechUrl} download>
               Download Audio
             </a>
           </Button>
-        </div>
-        <div>
-          <Generate asset={asset} />
-        </div>
+        </div> */}
+        {!videoUrl && (
+          <div>
+            <Generate asset={asset} />
+          </div>
+        )}
       </div>
     </div>
   );
