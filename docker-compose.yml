@@ -37,9 +37,6 @@ services:
       - D1_KEY
       - CF_ID
 
-volumes:
-  pg_data:
-
 secrets:
   GROQ_API_KEY:
     file: ./secrets/GROQ_API_KEY
