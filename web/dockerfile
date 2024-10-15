@@ -1,0 +1,102 @@
+FROM imbios/bun-node:1.1.22-22.6.0-alpine AS base
+
+FROM base AS deps
+
+WORKDIR /app
+
+COPY package.json bun.lockb* yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+RUN \
+    if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then npm ci; \
+    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+    elif [ -f bun.lockb ]; then bun install; \
+    else echo "Lockfile not found." && exit 1; \
+    fi
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN --mount=type=secret,id=GROQ_API_KEY \
+    --mount=type=secret,id=GEMINI_API_KEY \
+    --mount=type=secret,id=GOOGLE_API_KEY \
+    --mount=type=secret,id=CF_API_KEY \
+    --mount=type=secret,id=R2_ACCESS_KEY \
+    --mount=type=secret,id=R2_SECRET_KEY \
+    --mount=type=secret,id=CF_ACCOUNT_ID \
+    --mount=type=secret,id=BUCKET_NAME \
+    --mount=type=secret,id=ASSEMBLY_API_KEY \
+    --mount=type=secret,id=REPLICATE_API_KEY \
+    --mount=type=secret,id=D1_ID \
+    --mount=type=secret,id=CF_ID \
+    --mount=type=secret,id=D1_KEY \
+    echo "Checking secrets:" && \
+    ls -l /run/secrets/ && \
+    echo "GROQ_API_KEY exists: $(test -f /run/secrets/GROQ_API_KEY && echo Yes || echo No)" && \
+    echo "GEMINI_API_KEY exists: $(test -f /run/secrets/GEMINI_API_KEY && echo Yes || echo No)" && \
+    echo "GOOGLE_API_KEY exists: $(test -f /run/secrets/GOOGLE_API_KEY && echo Yes || echo No)" && \
+    echo "CF_API_KEY exists: $(test -f /run/secrets/CF_API_KEY && echo Yes || echo No)" && \
+    echo "R2_ACCESS_KEY exists: $(test -f /run/secrets/R2_ACCESS_KEY && echo Yes || echo No)" && \
+    echo "R2_SECRET_KEY exists: $(test -f /run/secrets/R2_SECRET_KEY && echo Yes or No)" && \
+    echo "CF_ACCOUNT_ID exists: $(test -f /run/secrets/CF_ACCOUNT_ID && echo Yes or No)" && \
+    echo "BUCKET_NAME exists: $(test -f /run/secrets/BUCKET_NAME && echo Yes or No)" && \
+    echo "ASSEMBLY_API_KEY exists: $(test -f /run/secrets/ASSEMBLY_API_KEY && echo Yes or No)" && \
+    echo "REPLICATE_API_KEY exists: $(test -f /run/secrets/REPLICATE_API_KEY && echo Yes or No)" && \
+    echo "D1_ID exists: $(test -f /run/secrets/D1_ID && echo Yes or No)" && \
+    echo "CF_ID exists: $(test -f /run/secrets/CF_ID && echo Yes or No)" && \
+    echo "D1_KEY exists: $(test -f /run/secrets/D1_KEY && echo Yes or No)" && \
+    export GROQ_API_KEY=$(cat /run/secrets/GROQ_API_KEY) && \
+    export GEMINI_API_KEY=$(cat /run/secrets/GEMINI_API_KEY) && \
+    export GOOGLE_API_KEY=$(cat /run/secrets/GOOGLE_API_KEY) && \
+    export CF_API_KEY=$(cat /run/secrets/CF_API_KEY) && \
+    export R2_ACCESS_KEY=$(cat /run/secrets/R2_ACCESS_KEY) && \
+    export R2_SECRET_KEY=$(cat /run/secrets/R2_SECRET_KEY) && \
+    export CF_ACCOUNT_ID=$(cat /run/secrets/CF_ACCOUNT_ID) && \
+    export BUCKET_NAME=$(cat /run/secrets/BUCKET_NAME) && \
+    export ASSEMBLY_API_KEY=$(cat /run/secrets/ASSEMBLY_API_KEY) && \
+    export REPLICATE_API_KEY=$(cat /run/secrets/REPLICATE_API_KEY) && \
+    export D1_ID=$(cat /run/secrets/D1_ID) && \
+    export CF_ID=$(cat /run/secrets/CF_ID) && \
+    export D1_KEY=$(cat /run/secrets/D1_KEY) && \
+    if [ -f yarn.lock ]; then yarn run build; \
+    elif [ -f package-lock.json ]; then npm run build; \
+    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+    elif [ -f bun.lockb ]; then bun run build; \
+    else echo "Lockfile not found." && exit 1; \
+    fi
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1002 nodejs
+RUN adduser --system --uid 1002 nextjs
+
+COPY --from=builder /app/public ./public
+
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+COPY entrypoint.sh ./
+
+USER root
+RUN chmod 555 entrypoint.sh
+
+USER nextjs
+
+EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+CMD ["node", "server.js"]
