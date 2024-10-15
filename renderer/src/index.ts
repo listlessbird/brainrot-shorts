@@ -78,7 +78,7 @@ async function renderVideo(
       if (encodedDoneIn !== null) {
         console.log(`Encoded in ${encodedDoneIn}ms`);
       }
-      progressCallback(50 + progress);
+      progressCallback(50 + progress * 50);
     },
   });
 
@@ -121,7 +121,7 @@ const server = Bun.serve({
                 `data: ${JSON.stringify({
                   progress: 100,
                   status: "complete",
-                  path: `/asset/${body.configId}`,
+                  path: `/assets/${body.configId}`,
                 })}\n\n`
               )
             );

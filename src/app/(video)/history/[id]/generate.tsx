@@ -9,7 +9,7 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
   const [isPending, startTransition] = useTransition();
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
-
+  const [url, setUrl] = useState("");
   async function handleGeneration() {
     setProgress(0);
     setStatus("Starting...");
@@ -40,6 +40,11 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
           setStatus(`Data at ${data.path}`);
         }
 
+        if (data.signedUrl) {
+          console.log("SignedUrl", data.signedUrl);
+          setUrl(data.signedUrl);
+        }
+
         if (data.error) {
           console.error("Error", data.error);
           setStatus("Error");
@@ -57,6 +62,11 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
         <p>Status: {status}</p>
         <p>Progress: {progress}%</p>
       </div>
+      {url.length > 1 && (
+        <video controls className="w-full">
+          <source src={url} type="video/mp4" />
+        </video>
+      )}
     </div>
   );
 }

@@ -52,6 +52,20 @@ export async function storeGeneration(data: {
   return generationId;
 }
 
+export async function storeGeneratedVideo({
+  r2Url,
+  configId,
+}: {
+  r2Url: string;
+  configId: string;
+}) {
+  return db
+    .update(generationsTable)
+    .set({ video_url: r2Url })
+    .where(eq(generationsTable.configId, configId))
+    .returning({ url: generationsTable.video_url });
+}
+
 export async function getConfigByParams(params: CreateVideoScriptConfig) {
   const result = await db
     .select({
