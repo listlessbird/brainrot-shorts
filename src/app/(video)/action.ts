@@ -21,6 +21,7 @@ import {
   storeScript,
 } from "@/db/db-fns";
 import { makeSignedUrl } from "@/lib/r2";
+import { redirect } from "next/navigation";
 
 const {
   CF_ACCOUNT_ID,
@@ -131,13 +132,15 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
     });
     console.log("Stored generation with ID:", generationId);
 
-    return {
-      ...object,
-      images,
-      audio: audioUploadResult.signedUrl,
-      captions: captionUrl,
-      sessionId: generationId,
-    };
+    // return {
+    //   ...object,
+    //   images,
+    //   audio: audioUploadResult.signedUrl,
+    //   captions: captionUrl,
+    //   sessionId: generationId,
+    // };
+
+    redirect(`/history/${configId}`);
   } catch (error) {
     console.error("Error in createVideoScriptAction", error);
     throw error;
