@@ -35,10 +35,14 @@ export async function History() {
   );
 }
 
+type GenerationViewProp = Omit<GenerationViewType[number], "images"> & {
+  images: string;
+};
+
 function GenerationsPreview({
   generation,
 }: {
-  generation: GenerationViewType[number];
+  generation: GenerationViewProp;
 }) {
   return (
     <Link href={`/history/${generation.configId}`} className="contents">
@@ -52,7 +56,7 @@ function GenerationsPreview({
         />
         <div className="space-y-2">
           <h2 className="text-xl font-bold truncate">{generation.topic}</h2>
-          <p className="text-sm">{generation?.duration / 1000} seconds</p>
+          <p className="text-sm">{generation?.duration! / 1000} seconds</p>
         </div>
       </div>
     </Link>

@@ -14,7 +14,7 @@ export async function startGeneration({
   const stream = new ReadableStream({
     start: async (controller) => {
       const response = await fetch(
-        `http://localhost:3001/render/${asset.configId}/`,
+        `${process.env.RENDERER_URL}/render/${asset.configId}/`,
         { method: "POST", body: JSON.stringify(asset) }
       );
 
@@ -59,7 +59,7 @@ export async function startGeneration({
           console.log({ videoPath });
 
           const { url, signedUrl } = await uploadVideoToR2(
-            `http://localhost:3001/assets/${asset.configId}`,
+            `${process.env.RENDERER_URL}/assets/${asset.configId}`,
             asset.configId!
           ).then(async ({ key, signedUrl, url }) => {
             const storedUrl = await storeGeneratedVideo({
