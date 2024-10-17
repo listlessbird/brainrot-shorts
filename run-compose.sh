@@ -20,3 +20,4 @@ done < "$ENV_FILE"
 
 echo "Running docker-compose..."
 docker-compose up --build
+# docker-compose up --build --no-deps web
