@@ -1,7 +1,6 @@
 # FROM oven/bun:latest AS base
 
-FROM imbios/bun-node:latest-current-debian AS base
-
+FROM oven/bun:debian as base
 
 RUN apt-get update
 RUN apt install -y \
@@ -31,7 +30,7 @@ RUN cd /temp/dev && bun install --frozen-lockfile
 RUN mkdir -p /temp/prod
 COPY package.json bun.lockb /temp/prod/
 RUN cd /temp/prod && bun install --frozen-lockfile --production
-RUN cd /temp/prod && npx remotion browser ensure
+RUN cd /temp/prod && bunx remotion browser ensure
 
 # copy node_modules from temp directory
 # then copy all (non-ignored) project files into the image
@@ -53,6 +52,8 @@ COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/src ./src
 COPY --from=prerelease /usr/src/app/package.json .
 
+RUN chmod -R 755 /usr/src/app/node_modules/@remotion
+RUN chown -R bun:bun /usr/src/app
 
 # run the app
 USER bun
