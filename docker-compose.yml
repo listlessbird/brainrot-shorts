@@ -22,6 +22,8 @@ services:
         - CF_ID
     ports:
       - "3000:3000"
+    environment:
+      - RENDERER_URL=http://renderer:3001
     secrets:
       - GROQ_API_KEY
       - GEMINI_API_KEY
@@ -36,6 +38,13 @@ services:
       - D1_ID
       - D1_KEY
       - CF_ID
+
+  renderer:
+    image: ai-short-gen-renderer
+    build: 
+      context: ./renderer
+    ports:
+      - "3001:3001"
 
 secrets:
   GROQ_API_KEY:
