@@ -2,6 +2,7 @@ import { SessionValidationResult, validateSessionToken } from "@/lib/session";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { Google } from "arctic";
+import { redirect } from "next/navigation";
 
 export const google = new Google(
   process.env.GOOGLE_CLIENT_ID!,
@@ -22,3 +23,13 @@ export const getCurrentSession = cache(
     return result;
   }
 );
+
+export const validateRequest = cache(async () => {
+  const { user } = await getCurrentSession();
+
+  if (user === null) {
+    return redirect("/login");
+  }
+
+  return { user };
+});

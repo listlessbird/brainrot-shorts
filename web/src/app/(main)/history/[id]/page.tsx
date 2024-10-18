@@ -5,6 +5,7 @@ import { cache } from "react";
 import { r2, makeSignedUrl } from "@/lib/r2";
 import { Generate } from "@/app/(main)/history/[id]/generate";
 import { notFound } from "next/navigation";
+import { validateRequest } from "@/lib/auth";
 
 const getGeneration = cache(async (id: string) => {
   const generations = await getAllGenerationsByConfigId(id);
@@ -68,6 +69,7 @@ export default async function Generation({
 }: {
   params: { id: string };
 }) {
+  const { user } = await validateRequest();
   const gen = await getGeneration(id);
 
   return (
