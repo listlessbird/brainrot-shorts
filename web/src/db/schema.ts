@@ -46,9 +46,9 @@ export const generatedScriptsTable = sqliteTable("generated_script", {
 });
 
 export const userTable = sqliteTable("user", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true }),
   email: text("email").notNull(),
-  name: text("name").notNull(),
+  username: text("username").notNull(),
   googleId: text("google_id").notNull(),
   picture: text("picture").notNull(),
 });

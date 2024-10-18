@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { type OAuth2Tokens, decodeIdToken } from "arctic";
 import { google } from "@/lib/auth";
+import { createUser, getUserFromGoogleId } from "@/db/user-fns";
+import {
+  createSession,
+  generateSessionToken,
+  setSessionTokenCookie,
+} from "@/lib/session";
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -36,6 +42,41 @@ export async function GET(request: NextRequest) {
   }
 
   const claims = decodeIdToken(tokens.idToken()) as any;
+
+  console.table(claims);
   const googleUserId = claims?.sub;
   const username = claims?.name;
+  const picture = claims?.picture;
+  const email = claims?.email;
+  const existingUser = await getUserFromGoogleId(googleUserId);
+
+  if (existingUser !== null) {
+    const sessionToken = generateSessionToken();
+    const session = await createSession(sessionToken, existingUser.id);
+    setSessionTokenCookie(sessionToken, session.expiresAt);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: "/",
+      },
+    });
+  }
+
+  const user = await createUser({
+    email,
+    googleId: googleUserId,
+    username,
+    picture,
+  });
+
+  const sessionToken = generateSessionToken();
+  const session = await createSession(sessionToken, user.id);
+  setSessionTokenCookie(sessionToken, session.expiresAt);
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: "/",
+    },
+  });
 }
