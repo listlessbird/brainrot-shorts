@@ -26,14 +26,23 @@ AI Short Generator is a web application that allows users to create short-form v
    bun install
    ```
 
-3. Install dependencies for the renderer:
+3. Run migrations
+
+   ```
+   bun db:gen
+   bun db:mig
+   ```
+
+   Make sure you have setup all the environment variables
+
+4. Install dependencies for the renderer:
 
    ```
    cd ../renderer
    bun install
    ```
 
-4. Set up environment variables:
+5. Set up environment variables:
    - Copy `.env.example` to `.env` in the `web` directory and fill in the required values.
 
 ### Development
