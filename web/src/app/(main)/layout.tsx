@@ -1,4 +1,4 @@
-import { VideoConfigForm } from "@/app/(video)/new-video-form";
+import { VideoConfigForm } from "@/app/(main)/new-video-form";
 import { QueryProvider } from "@/app/query-provider";
 import { Header } from "@/components/nav/header";
 import { HeaderMobile } from "@/components/nav/header-mobile";

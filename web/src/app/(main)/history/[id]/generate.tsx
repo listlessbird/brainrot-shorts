@@ -1,6 +1,6 @@
 "use client";
 
-import { startGeneration } from "@/app/(video)/history/[id]/action";
+import { startGeneration } from "@/app/(main)/history/[id]/action";
 import { Button } from "@/components/ui/button";
 import { GeneratedAssetType } from "@/types";
 import { useState, useTransition } from "react";

@@ -27,11 +27,11 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { useVideoConfigMutation } from "@/app/(video)/use-video-config-mutation";
+import { useVideoConfigMutation } from "@/app/(main)/use-video-config-mutation";
 
-import { testAction } from "@/app/(video)/test-action";
+import { testAction } from "@/app/(main)/test-action";
 import { useState } from "react";
-import { ProgressDisplay } from "@/app/(video)/progress-display";
+import { ProgressDisplay } from "@/app/(main)/progress-display";
 
 const groups = [
   {
