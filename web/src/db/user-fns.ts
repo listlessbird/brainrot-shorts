@@ -12,7 +12,7 @@ export async function getUserFromGoogleId(id: string) {
     return null;
   }
 
-  const { user } = result[1];
+  const { user } = result[0];
 
   return user;
 }
