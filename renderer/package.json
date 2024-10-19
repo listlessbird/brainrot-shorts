@@ -17,6 +17,7 @@
   "dependencies": {
     "@remotion/bundler": "4.0.221",
     "@remotion/cli": "4.0.221",
+    "@remotion/google-fonts": "^4.0.221",
     "@remotion/renderer": "^4.0.221",
     "@remotion/tailwind": "4.0.221",
     "@remotion/zod-types": "4.0.221",
