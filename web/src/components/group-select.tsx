@@ -21,7 +21,7 @@ export function GroupSelect<
   const [selected, setSelected] = useState<string>("");
 
   return (
-    <div className="flex gap-2 flex-wrap justify-around">
+    <div className="flex gap-1 md:gap-2 flex-wrap justify-around">
       {groups.map(({ src, value }) => (
         <div
           className={cn(
@@ -43,9 +43,9 @@ export function GroupSelect<
               "object-cover row-span-full col-start-1 group-hover:scale-110 z-[-1] transition-all rounded-md"
             )}
           />
-          <div className="p-2 bg-white row-start-2 col-start-1 col-end-1 size-fit self-end justify-self-center font-semibold  w-full bg-opacity-25 text-center">
+          {/* <div className="p-2 bg-white row-start-2 col-start-1 col-end-1 size-fit self-end justify-self-center font-semibold  w-full bg-opacity-25 text-center">
             {value}
-          </div>
+          </div> */}
         </div>
       ))}
     </div>

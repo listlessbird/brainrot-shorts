@@ -66,7 +66,10 @@ export function HeaderMobile() {
       animate={open ? "open" : "closed"}
       custom={height}
       ref={containerRef}
-      className={cn("fixed inset-0 z-[100] md:hidden")}
+      className={cn(
+        "fixed inset-0 z-[100] md:hidden pointer-events-none",
+        open && "pointer-events-auto"
+      )}
     >
       {/* Background overlay */}
       <motion.div

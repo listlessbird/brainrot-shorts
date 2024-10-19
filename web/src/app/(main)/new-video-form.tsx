@@ -59,7 +59,7 @@ export function VideoConfigForm() {
     defaultValues: {
       duration: 30 * 1000,
       style: "fairy-tale",
-      topic: "brainrot",
+      topic: "topic here",
     },
   });
 
@@ -132,7 +132,7 @@ export function VideoConfigForm() {
             name="style"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Video Style</FormLabel>
+                <FormLabel>Pick a style</FormLabel>
                 <FormControl>
                   <GroupSelect
                     value={field.value}
