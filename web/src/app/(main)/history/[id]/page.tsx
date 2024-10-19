@@ -7,8 +7,8 @@ import { Generate } from "@/app/(main)/history/[id]/generate";
 import { notFound } from "next/navigation";
 import { validateRequest } from "@/lib/auth";
 
-const getGeneration = cache(async (id: string) => {
-  const generations = await getAllGenerationsByConfigId(id);
+const getGeneration = cache(async (id: string, userGoogleId: string) => {
+  const generations = await getAllGenerationsByConfigId(id, userGoogleId);
 
   if (
     !generations ||
@@ -70,7 +70,7 @@ export default async function Generation({
   params: { id: string };
 }) {
   const { user } = await validateRequest();
-  const gen = await getGeneration(id);
+  const gen = await getGeneration(id, user.googleId);
 
   return (
     <>

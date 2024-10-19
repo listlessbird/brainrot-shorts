@@ -5,8 +5,8 @@ import Link from "next/link";
 import { cache } from "react";
 import { r2, makeSignedUrl } from "@/lib/r2";
 
-const allGenerations = cache(async () => {
-  const generations = await getAllGenerations();
+const allGenerations = cache(async (userGoogleId: string) => {
+  const generations = await getAllGenerations(userGoogleId);
   const presignImages = generations.map(async (generation) => {
     const rand = Math.floor(Math.random() * generation.images.length);
     const key =
@@ -23,8 +23,8 @@ const allGenerations = cache(async () => {
   });
 });
 
-export async function History() {
-  const gen = await allGenerations();
+export async function History({ userGoogleId }: { userGoogleId: string }) {
+  const gen = await allGenerations(userGoogleId);
   console.log(gen);
   return (
     <>

@@ -22,6 +22,7 @@ import {
 } from "@/db/db-fns";
 import { makeSignedUrl } from "@/lib/r2";
 import { redirect } from "next/navigation";
+import { getCurrentSession } from "@/lib/auth";
 
 const {
   CF_ACCOUNT_ID,
@@ -58,6 +59,14 @@ const sendProgress = async (message: string) => {
   });
 };
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
+  const { user } = await getCurrentSession();
+
+  if (!user) {
+    return new Response("Unauthorized", {
+      status: 401,
+    });
+  }
+
   console.log(
     "Starting createVideoScriptAction",
     JSON.stringify(values, null, 2)
@@ -69,11 +78,12 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
     const validated = createVideConfigSchema.parse(values);
     console.log("Input validation successful");
 
-    const existingConfig = await getConfigByParams(validated);
+    const existingConfig = await getConfigByParams(validated, user.googleId);
     if (existingConfig) {
       console.log("Existing configuration found");
       const existingGeneration = await getGenerationByConfigId(
-        existingConfig.config.id
+        existingConfig.config.id,
+        user.googleId
       );
       if (existingGeneration) {
         console.log("Existing generation found, returning cached result");
@@ -87,7 +97,7 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
       }
     }
 
-    const configId = await storeConfig(sessionId, validated);
+    const configId = await storeConfig(sessionId, validated, user.googleId);
     console.log("Stored configuration with ID:", configId);
 
     await sendProgress("Generating script");
@@ -97,7 +107,7 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
       JSON.stringify({ object }, null, 2)
     );
 
-    const scriptId = await storeScript(object.scenes, configId);
+    const scriptId = await storeScript(object.scenes, configId, user.googleId);
     console.log("Stored script with ID:", scriptId);
 
     const fullText = object.scenes.map((s) => s.textContent).join(" ");
@@ -129,6 +139,7 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
       images: images,
       configId: configId,
       scriptId: scriptId,
+      userGoogleId: user.googleId,
     });
     console.log("Stored generation with ID:", generationId);
 

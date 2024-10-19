@@ -18,6 +18,9 @@ export const generationsTable = sqliteTable("generations", {
   scriptId: text("script_id")
     .notNull()
     .references(() => generatedScriptsTable.id),
+  userGoogleId: text("user_google_id")
+    .notNull()
+    .references(() => userTable.googleId),
 });
 
 export const configTable = sqliteTable("config", {
@@ -30,8 +33,10 @@ export const configTable = sqliteTable("config", {
     .notNull()
     .default(sql`30`),
   style: text("style").notNull(),
-  //   promptId
   scriptId: text("script_id").references(() => generatedScriptsTable.id),
+  userGoogleId: text("user_google_id")
+    .notNull()
+    .references(() => userTable.googleId),
 });
 
 export const generatedScriptsTable = sqliteTable("generated_script", {
@@ -43,13 +48,16 @@ export const generatedScriptsTable = sqliteTable("generated_script", {
     .notNull()
     .$type<{ imagePrompt: string; textContent: string }[]>()
     .default(sql`[]`),
+  userGoogleId: text("user_google_id")
+    .notNull()
+    .references(() => userTable.googleId),
 });
 
 export const userTable = sqliteTable("user", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   email: text("email").notNull(),
   username: text("username").notNull(),
-  googleId: text("google_id").notNull(),
+  googleId: text("google_id").notNull().unique(),
   picture: text("picture").notNull(),
 });
 

@@ -3,33 +3,41 @@ import { db } from "@/db/db";
 import { configTable, generatedScriptsTable, generationsTable } from "./schema";
 import { eq, and, desc } from "drizzle-orm";
 import { CreateVideoScriptConfig } from "@/lib/validations";
-
 export async function storeConfig(
   configId: string,
-  config: CreateVideoScriptConfig
+  config: CreateVideoScriptConfig,
+  userGoogleId: string
 ): Promise<string> {
   await db.insert(configTable).values({
     id: configId,
     topic: config.topic,
     duration: config.duration,
     style: config.style,
+    userGoogleId,
   });
   return configId;
 }
 
 export async function storeScript(
   script: { imagePrompt: string; textContent: string }[],
-  configId: string
+  configId: string,
+  userGoogleId: string
 ): Promise<string> {
   const scriptId = randomUUID();
   await db.insert(generatedScriptsTable).values({
     id: scriptId,
     script: script,
+    userGoogleId,
   });
   await db
     .update(configTable)
     .set({ scriptId })
-    .where(eq(configTable.id, configId));
+    .where(
+      and(
+        eq(configTable.id, configId),
+        eq(configTable.userGoogleId, userGoogleId)
+      )
+    );
   return scriptId;
 }
 
@@ -39,6 +47,7 @@ export async function storeGeneration(data: {
   images: string[];
   configId: string;
   scriptId: string;
+  userGoogleId: string;
 }): Promise<string> {
   const generationId = randomUUID();
   await db.insert(generationsTable).values({
@@ -48,6 +57,7 @@ export async function storeGeneration(data: {
     images: data.images,
     configId: data.configId,
     scriptId: data.scriptId,
+    userGoogleId: data.userGoogleId,
   });
   return generationId;
 }
@@ -55,18 +65,28 @@ export async function storeGeneration(data: {
 export async function storeGeneratedVideo({
   r2Url,
   configId,
+  userGoogleId,
 }: {
   r2Url: string;
   configId: string;
+  userGoogleId: string;
 }) {
   return db
     .update(generationsTable)
     .set({ video_url: r2Url })
-    .where(eq(generationsTable.configId, configId))
+    .where(
+      and(
+        eq(generationsTable.configId, configId),
+        eq(generationsTable.userGoogleId, userGoogleId)
+      )
+    )
     .returning({ url: generationsTable.video_url });
 }
 
-export async function getConfigByParams(params: CreateVideoScriptConfig) {
+export async function getConfigByParams(
+  params: CreateVideoScriptConfig,
+  userGoogleId: string
+) {
   const result = await db
     .select({
       config: configTable,
@@ -81,7 +101,8 @@ export async function getConfigByParams(params: CreateVideoScriptConfig) {
       and(
         eq(configTable.topic, params.topic),
         eq(configTable.duration, params.duration),
-        eq(configTable.style, params.style)
+        eq(configTable.style, params.style),
+        eq(configTable.userGoogleId, userGoogleId)
       )
     )
     .limit(1);
@@ -89,17 +110,25 @@ export async function getConfigByParams(params: CreateVideoScriptConfig) {
   return result[0];
 }
 
-export async function getGenerationByConfigId(configId: string) {
+export async function getGenerationByConfigId(
+  configId: string,
+  userGoogleId: string
+) {
   const result = await db
     .select()
     .from(generationsTable)
-    .where(eq(generationsTable.configId, configId))
+    .where(
+      and(
+        eq(generationsTable.configId, configId),
+        eq(generationsTable.userGoogleId, userGoogleId)
+      )
+    )
     .limit(1);
 
   return result[0];
 }
 
-export async function getGenerationById(id: string) {
+export async function getGenerationById(id: string, userGoogleId: string) {
   const result = await db
     .select({
       generation: generationsTable,
@@ -112,13 +141,18 @@ export async function getGenerationById(id: string) {
       generatedScriptsTable,
       eq(generationsTable.scriptId, generatedScriptsTable.id)
     )
-    .where(eq(generationsTable.id, id))
+    .where(
+      and(
+        eq(generationsTable.id, id),
+        eq(generationsTable.userGoogleId, userGoogleId)
+      )
+    )
     .limit(1);
 
   return result[0];
 }
 
-export async function getAllGenerations() {
+export async function getAllGenerations(userGoogleId: string) {
   const listGenerationsQuery = db
     .select({
       id: generationsTable.id,
@@ -133,12 +167,16 @@ export async function getAllGenerations() {
       generatedScriptsTable,
       eq(generationsTable.scriptId, generatedScriptsTable.id)
     )
+    .where(eq(generationsTable.userGoogleId, userGoogleId))
     .orderBy(desc(generationsTable.createdAt));
 
   return listGenerationsQuery;
 }
 
-export async function getAllGenerationsByConfigId(configId: string) {
+export async function getAllGenerationsByConfigId(
+  configId: string,
+  userGoogleId: string
+) {
   const result = await db
     .select({
       id: generationsTable.id,
@@ -160,7 +198,12 @@ export async function getAllGenerationsByConfigId(configId: string) {
       eq(generatedScriptsTable.id, configTable.scriptId)
     )
     .leftJoin(generationsTable, eq(generationsTable.configId, configTable.id))
-    .where(eq(configTable.id, configId))
+    .where(
+      and(
+        eq(configTable.id, configId),
+        eq(configTable.userGoogleId, userGoogleId)
+      )
+    )
     .limit(1);
   return result[0];
 }

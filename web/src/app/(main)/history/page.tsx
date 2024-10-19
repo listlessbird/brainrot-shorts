@@ -13,7 +13,7 @@ export default async function Home() {
       {/* <VideoConfigForm /> */}
       <Suspense fallback={<Loading />}>
         <div className="my-4 flex flex-wrap gap-2">
-          <History />
+          <History userGoogleId={user.googleId} />
         </div>
       </Suspense>
     </div>

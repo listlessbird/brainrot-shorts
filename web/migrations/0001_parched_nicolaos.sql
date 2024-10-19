@@ -1,1 +1,0 @@
-ALTER TABLE `generations` ADD `video_url` text;

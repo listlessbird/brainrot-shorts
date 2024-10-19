@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "41522002-c2dd-4953-ba33-c63d920a7ba1",
-  "prevId": "05a7e6d3-4e26-4435-9ef1-6dab5d66760a",
+  "id": "8aa42f48-27e2-40d0-a814-10fae1f05962",
+  "prevId": "e1dccd8c-7163-4c54-8456-e10e9db08b5e",
   "tables": {
     "config": {
       "name": "config",
@@ -50,6 +50,13 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "user_google_id": {
+          "name": "user_google_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {},
@@ -63,6 +70,19 @@
           ],
           "columnsTo": [
             "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "config_user_google_id_user_google_id_fk": {
+          "name": "config_user_google_id_user_google_id_fk",
+          "tableFrom": "config",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_google_id"
+          ],
+          "columnsTo": [
+            "google_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -96,10 +116,31 @@
           "notNull": true,
           "autoincrement": false,
           "default": "[]"
+        },
+        "user_google_id": {
+          "name": "user_google_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "generated_script_user_google_id_user_google_id_fk": {
+          "name": "generated_script_user_google_id_user_google_id_fk",
+          "tableFrom": "generated_script",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_google_id"
+          ],
+          "columnsTo": [
+            "google_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -163,6 +204,13 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "user_google_id": {
+          "name": "user_google_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {},
@@ -189,6 +237,19 @@
           ],
           "columnsTo": [
             "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "generations_user_google_id_user_google_id_fk": {
+          "name": "generations_user_google_id_user_google_id_fk",
+          "tableFrom": "generations",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_google_id"
+          ],
+          "columnsTo": [
+            "google_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -249,7 +310,7 @@
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": true
         },
         "email": {
           "name": "email",
@@ -258,8 +319,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "name": {
-          "name": "name",
+        "username": {
+          "name": "username",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -280,7 +341,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "user_google_id_unique": {
+          "name": "user_google_id_unique",
+          "columns": [
+            "google_id"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}

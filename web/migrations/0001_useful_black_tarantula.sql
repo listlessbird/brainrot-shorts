@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `generated_script_user_google_id_unique` ON `generated_script` (`user_google_id`);
