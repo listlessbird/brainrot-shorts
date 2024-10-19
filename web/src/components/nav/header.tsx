@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { useScroll } from "@/hooks/use-scroll";
+import Image from "next/image";
+import { UserButton } from "@/components/nav/user-button";
 
 export function Header() {
   const scrolled = useScroll(5);
@@ -30,9 +32,7 @@ export function Header() {
         </div>
 
         <div className="hidden md:block">
-          <div className="h-8 w-8 rounded-full bg-zinc-300 flex items-center justify-center text-center">
-            <span className="font-semibold text-sm">U</span>
-          </div>
+          <UserButton />
         </div>
       </div>
     </div>
