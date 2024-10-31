@@ -1,6 +1,7 @@
 "use server";
 
 import { storeGeneratedVideo } from "@/db/db-fns";
+import { validateRequest } from "@/lib/auth";
 import { uploadVideoToR2 } from "@/lib/r2";
 import { GeneratedAssetType } from "@/types";
 
@@ -9,6 +10,12 @@ export async function startGeneration({
 }: {
   asset: GeneratedAssetType;
 }) {
+  const { user } = await validateRequest();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -65,6 +72,7 @@ export async function startGeneration({
             const storedUrl = await storeGeneratedVideo({
               r2Url: url,
               configId: asset.configId!,
+              userGoogleId: user.googleId,
             });
 
             console.log("Stored db record", storedUrl);
