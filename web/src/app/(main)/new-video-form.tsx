@@ -59,7 +59,7 @@ export function VideoConfigForm() {
     defaultValues: {
       duration: 30 * 1000,
       style: "fairy-tale",
-      topic: "topic here",
+      topic: "snow white and her boyfriend",
     },
   });
 
@@ -76,7 +76,7 @@ export function VideoConfigForm() {
       },
     });
     // const r = await testAction(values);
-    form.reset();
+    // form.reset();
     // ...
   };
 
@@ -91,7 +91,11 @@ export function VideoConfigForm() {
               <FormItem>
                 <FormLabel>Topic</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="topic for the video" {...field} />
+                  <Textarea
+                    placeholder="topic for the video"
+                    {...field}
+                    disabled={isPending}
+                  />
                 </FormControl>
                 <FormDescription>The topic for the video</FormDescription>
                 <FormMessage />
