@@ -6,6 +6,11 @@ import { r2, makeSignedUrl } from "@/lib/r2";
 import { Generate } from "@/app/(main)/history/[id]/generate";
 import { notFound } from "next/navigation";
 import { validateRequest } from "@/lib/auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar, Clock, Download, FileText } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
 const getGeneration = cache(async (id: string, userGoogleId: string) => {
   const generations = await getAllGenerationsByConfigId(id, userGoogleId);
@@ -95,95 +100,106 @@ function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric",
-      timeZoneName: "short",
     }).format(new Date(dateString));
   };
 
+  const infoCards = [
+    { icon: Calendar, label: "Created", value: formatDate(createdAt!) },
+    { icon: Clock, label: "Duration", value: `${duration / 1000}s` },
+    { icon: FileText, label: "Style", value: style },
+  ];
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-4 text-pretty capitalize truncate">
+    <div className="container mx-auto py-8">
+      <h1 className="text-4xl font-bold mb-6 text-pretty capitalize">
         {topic}
       </h1>
 
-      <div>
-        <div className="mb-4 space-y-2 text-sm">
-          <p>
-            <span className="font-semibold">ID:</span> {id}
-          </p>
-          <p>
-            <span className="font-semibold">Created:</span>{" "}
-            {formatDate(createdAt!)}
-          </p>
-          <p>
-            <span className="font-semibold">Duration:</span> {duration / 1000}{" "}
-            seconds
-          </p>
-          <p>
-            <span className="font-semibold">Style:</span> {style}
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Script & Images</h2>
-          {script!.map((item, index) => (
-            <div key={index} className="mb-4 bg-white p-4 rounded-lg shadow">
-              <div className="flex flex-col md:flex-row items-start">
-                <Image
-                  src={images![index]}
-                  alt={`Scene ${index + 1}`}
-                  className="w-1/3 h-auto rounded mr-4 "
-                  width={200}
-                  height={200}
-                />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {infoCards.map((card, index) => (
+          <Card key={index} className="overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <card.icon className="h-6 w-6 text-primary" />
+                </div>
                 <div>
-                  <p className="text-gray-700 mb-2">{item.textContent}</p>
-                  <p className="text-sm text-gray-500 italic">
-                    {item.imagePrompt}
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {card.label}
                   </p>
+                  <p className="text-lg font-bold truncate">{card.value}</p>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Audio</h2>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <audio controls className="w-full">
-              <source src={speechUrl!} type="audio/mpeg" />
-            </audio>
-          </div>
-        </div>
-
-        {videoUrl && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">Video</h2>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <video controls className="w-full">
-                <source src={videoUrl} type="video/mp4" />
-              </video>
-            </div>
-          </div>
-        )}
-        {/* 
-        <div className="text-center">
-          <Button asChild>
-            <a href={speechUrl} download>
-              Download Audio
-            </a>
-          </Button>
-        </div> */}
-        {!videoUrl && (
-          <div>
-            <Generate asset={asset} />
-          </div>
-        )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      <Tabs defaultValue="script" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="script">Script & Images</TabsTrigger>
+          <TabsTrigger value="audio">Audio</TabsTrigger>
+          {videoUrl && <TabsTrigger value="video">Video</TabsTrigger>}
+        </TabsList>
+        <TabsContent value="script">
+          <Card>
+            <CardContent className="p-6">
+              <ScrollArea className="h-[600px] pr-4">
+                {script!.map((item, index) => (
+                  <div key={index} className="mb-8 last:mb-0">
+                    <div className="flex flex-col md:flex-row items-start gap-4">
+                      <Image
+                        src={images![index]}
+                        alt={`Scene ${index + 1}`}
+                        className="w-full md:w-1/3 h-auto rounded-lg shadow-md"
+                        width={300}
+                        height={200}
+                      />
+                      <div className="flex-1">
+                        <p className="text-lg mb-2">{item.textContent}</p>
+                        <p className="text-sm text-muted-foreground italic">
+                          {item.imagePrompt}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="audio">
+          <Card>
+            <CardContent className="p-6">
+              <audio controls className="w-full">
+                <source src={speechUrl!} type="audio/mpeg" />
+              </audio>
+              <div className="mt-4 flex justify-end">
+                <Button asChild>
+                  <a href={speechUrl!} download>
+                    <Download className="mr-2 h-4 w-4" /> Download Audio
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        {videoUrl && (
+          <TabsContent value="video">
+            <Card>
+              <CardContent className="p-6">
+                <video controls className="w-full rounded-lg">
+                  <source src={videoUrl} type="video/mp4" />
+                </video>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
+
+      {!videoUrl && <Generate asset={asset} />}
     </div>
   );
 }

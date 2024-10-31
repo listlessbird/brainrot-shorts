@@ -52,7 +52,7 @@ function GenerationsPreview({
           alt="image"
           width={250}
           height={250}
-          className="w-full object-cover rounded-lg"
+          className="w-full object-cover rounded-lg h-[200px]"
         />
         <div className="space-y-2">
           <h2 className="text-xl font-bold truncate">{generation.topic}</h2>

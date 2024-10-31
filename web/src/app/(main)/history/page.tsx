@@ -11,11 +11,11 @@ export default async function Home() {
         Generations
       </h1>
       {/* <VideoConfigForm /> */}
-      <Suspense fallback={<Loading />}>
-        <div className="my-4 flex flex-wrap gap-2">
+      <div className="my-4 flex flex-wrap gap-2 md:gap-4">
+        <Suspense fallback={<Loading />}>
           <History userGoogleId={user.googleId} />
-        </div>
-      </Suspense>
+        </Suspense>
+      </div>
     </div>
   );
 }
