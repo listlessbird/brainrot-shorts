@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function ProgressDisplay() {
-  const [progress, setProgress] = useState("");
+  const [messages, setMessages] = useState<string[]>([]);
 
   useEffect(() => {
     const source = new EventSource("/api/progress");
 
     source.onmessage = (e) => {
       const data = JSON.parse(e.data);
-      setProgress(data.message);
+      setMessages((prevMessages) => [...prevMessages, data.message]);
     };
 
     return () => {
@@ -18,12 +22,35 @@ export function ProgressDisplay() {
     };
   }, []);
 
-  if (!progress) return null;
+  if (messages.length === 0) return null;
 
   return (
-    <div className="mt-4 p-4 bg-gray-100 rounded-md">
-      <h3 className="font-semibold">Progress:</h3>
-      <p>{progress}</p>
-    </div>
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold flex items-center">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Generation Progress
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+          <AnimatePresence>
+            {messages.map((message, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex items-start space-x-2 mb-2"
+              >
+                <div className="w-2 h-2 mt-2 rounded-full bg-primary flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">{message}</p>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 }

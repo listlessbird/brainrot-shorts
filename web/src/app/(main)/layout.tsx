@@ -20,12 +20,6 @@ export default async function Layout({
           <main className="min-h-screen flex-1">
             <Header />
             <HeaderMobile />
-            {/* <div className="space-y-8  max-w-2xl mx-auto pt-5">
-            <h1 className="scroll-m-20 text-2xl font-extrabold tracking-tight lg:text-5xl">
-            Ai shorts generator
-            </h1>
-            <VideoConfigForm />
-            </div> */}
             <div className="space-y-8  max-w-2xl mx-auto pt-5  px-3">
               {children}
             </div>
