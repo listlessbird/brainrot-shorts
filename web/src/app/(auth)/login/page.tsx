@@ -26,7 +26,7 @@ export default async function Page() {
   );
 }
 
-export function GoogleSignInButton() {
+function GoogleSignInButton() {
   return (
     <Button variant={"outline"} className="w-full" asChild size={"lg"}>
       <Link href={"/login/google"} className="flex items-center gap-2">
