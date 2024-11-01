@@ -7,8 +7,7 @@ import { redirect } from "next/navigation";
 export const google = new Google(
   process.env.GOOGLE_CLIENT_ID!,
   process.env.GOOGLE_CLIENT_SECRET!,
-  //todo: remove all hardcoded urls and use env var
-  "http://localhost:3000/login/google/callback"
+  `${process.env.NEXT_PUBLIC_BASE_URL!}/login/google/callback`
 );
 
 export const getCurrentSession = cache(

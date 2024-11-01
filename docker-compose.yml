@@ -3,41 +3,29 @@ name: ai-short-gen
 services:
   web:
     image: web-ui
+    env_file:
+      - .env
     build:
       context: ./web
       dockerfile: dockerfile
-      secrets:
-        - GROQ_API_KEY
-        - GEMINI_API_KEY
-        - GOOGLE_API_KEY
-        - CF_API_KEY
-        - R2_ACCESS_KEY
-        - R2_SECRET_KEY
-        - CF_ACCOUNT_ID
-        - BUCKET_NAME
-        - ASSEMBLY_API_KEY
-        - REPLICATE_API_KEY
-        - D1_ID
-        - D1_KEY
-        - CF_ID
     ports:
       - "3000:3000"
     environment:
       - RENDERER_URL=http://renderer:3001
-    secrets:
-      - GROQ_API_KEY
-      - GEMINI_API_KEY
-      - GOOGLE_API_KEY
-      - CF_API_KEY
-      - R2_ACCESS_KEY
-      - R2_SECRET_KEY
-      - CF_ACCOUNT_ID
-      - BUCKET_NAME
-      - ASSEMBLY_API_KEY
-      - REPLICATE_API_KEY
-      - D1_ID
-      - D1_KEY
-      - CF_ID
+      - NEXT_PUBLIC_BASE_URL=http://web:3000
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - CF_API_KEY=${CF_API_KEY}
+      - R2_ACCESS_KEY=${R2_ACCESS_KEY}
+      - R2_SECRET_KEY=${R2_SECRET_KEY}
+      - CF_ACCOUNT_ID=${CF_ACCOUNT_ID}
+      - BUCKET_NAME=${BUCKET_NAME}
+      - ASSEMBLY_API_KEY=${ASSEMBLY_API_KEY}
+      - REPLICATE_API_KEY=${REPLICATE_API_KEY}
+      - D1_ID=${D1_ID}
+      - D1_KEY=${D1_KEY}
+      - CF_ID=${CF_ID}
 
   renderer:
     image: ai-short-gen-renderer
@@ -46,33 +34,33 @@ services:
     ports:
       - "3001:3001"
 
-secrets:
-  GROQ_API_KEY:
-    file: ./secrets/GROQ_API_KEY
-  GEMINI_API_KEY:
-    file: ./secrets/GEMINI_API_KEY
-  GOOGLE_API_KEY:
-    file: ./secrets/GOOGLE_API_KEY
-  CF_API_KEY:
-    file: ./secrets/CF_API_KEY
-  R2_ACCESS_KEY:
-    file: ./secrets/R2_ACCESS_KEY
-  R2_SECRET_KEY:
-    file: ./secrets/R2_SECRET_KEY
-  CF_ACCOUNT_ID:
-    file: ./secrets/CF_ACCOUNT_ID
-  BUCKET_NAME:
-    file: ./secrets/BUCKET_NAME
-  ASSEMBLY_API_KEY:
-    file: ./secrets/ASSEMBLY_API_KEY
-  REPLICATE_API_KEY:
-    file: ./secrets/REPLICATE_API_KEY
-  D1_ID:
-    file: ./secrets/D1_ID
-  D1_KEY:
-    file: ./secrets/D1_KEY
-  CF_ID:
-    file: ./secrets/CF_ID
+# secrets:
+#   GROQ_API_KEY:
+#     file: ./secrets/GROQ_API_KEY
+#   GEMINI_API_KEY:
+#     file: ./secrets/GEMINI_API_KEY
+#   GOOGLE_API_KEY:
+#     file: ./secrets/GOOGLE_API_KEY
+#   CF_API_KEY:
+#     file: ./secrets/CF_API_KEY
+#   R2_ACCESS_KEY:
+#     file: ./secrets/R2_ACCESS_KEY
+#   R2_SECRET_KEY:
+#     file: ./secrets/R2_SECRET_KEY
+#   CF_ACCOUNT_ID:
+#     file: ./secrets/CF_ACCOUNT_ID
+#   BUCKET_NAME:
+#     file: ./secrets/BUCKET_NAME
+#   ASSEMBLY_API_KEY:
+#     file: ./secrets/ASSEMBLY_API_KEY
+#   REPLICATE_API_KEY:
+#     file: ./secrets/REPLICATE_API_KEY
+#   D1_ID:
+#     file: ./secrets/D1_ID
+#   D1_KEY:
+#     file: ./secrets/D1_KEY
+#   CF_ID:
+#     file: ./secrets/CF_ID
 
 networks:
   default:

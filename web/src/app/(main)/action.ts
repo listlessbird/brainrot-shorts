@@ -36,6 +36,7 @@ const {
   GOOGLE_API_KEY,
   REPLICATE_API_KEY,
   TOGETHERAI_API_KEY,
+  NEXT_PUBLIC_BASE_URL,
 } = process.env;
 
 const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
@@ -79,7 +80,7 @@ async function sendProgress(
     timestamp: Date.now(),
   };
 
-  await fetch("http://localhost:3000/api/progress/", {
+  await fetch(`${NEXT_PUBLIC_BASE_URL}/api/progress/`, {
     method: "POST",
     body: JSON.stringify(update),
     headers: { "Content-Type": "application/json" },
