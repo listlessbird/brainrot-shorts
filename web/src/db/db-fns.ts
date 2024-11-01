@@ -1,6 +1,13 @@
 import { randomUUID } from "crypto";
 import { db } from "@/db/db";
-import { configTable, generatedScriptsTable, generationsTable } from "./schema";
+import {
+  Config,
+  configTable,
+  GeneratedScript,
+  generatedScriptsTable,
+  Generation,
+  generationsTable,
+} from "./schema";
 import { eq, and, desc } from "drizzle-orm";
 import { CreateVideoScriptConfig } from "@/lib/validations";
 export async function storeConfig(
@@ -83,51 +90,6 @@ export async function storeGeneratedVideo({
     .returning({ url: generationsTable.video_url });
 }
 
-export async function getConfigByParams(
-  params: CreateVideoScriptConfig,
-  userGoogleId: string
-) {
-  const result = await db
-    .select({
-      config: configTable,
-      script: generatedScriptsTable,
-    })
-    .from(configTable)
-    .leftJoin(
-      generatedScriptsTable,
-      eq(configTable.scriptId, generatedScriptsTable.id)
-    )
-    .where(
-      and(
-        eq(configTable.topic, params.topic),
-        eq(configTable.duration, params.duration),
-        eq(configTable.style, params.style),
-        eq(configTable.userGoogleId, userGoogleId)
-      )
-    )
-    .limit(1);
-
-  return result[0];
-}
-
-export async function getGenerationByConfigId(
-  configId: string,
-  userGoogleId: string
-) {
-  const result = await db
-    .select()
-    .from(generationsTable)
-    .where(
-      and(
-        eq(generationsTable.configId, configId),
-        eq(generationsTable.userGoogleId, userGoogleId)
-      )
-    )
-    .limit(1);
-
-  return result[0];
-}
-
 export async function getGenerationById(id: string, userGoogleId: string) {
   const result = await db
     .select({
@@ -206,4 +168,53 @@ export async function getAllGenerationsByConfigId(
     )
     .limit(1);
   return result[0];
+}
+
+export async function getConfigByParams(
+  params: CreateVideoScriptConfig,
+  userGoogleId: string
+) {
+  const config = await db.query.configTable.findFirst({
+    where: and(
+      eq(configTable.topic, params.topic),
+      eq(configTable.duration, params.duration),
+      eq(configTable.style, params.style),
+      eq(configTable.userGoogleId, userGoogleId)
+    ),
+    with: {
+      generatedScript: true,
+    },
+  });
+
+  if (!config) return null;
+  return {
+    config,
+    script: config.generatedScript,
+  };
+}
+
+export async function getGenerationByConfigId(
+  configId: string,
+  userGoogleId: string
+) {
+  return db.query.generationsTable.findFirst({
+    where: and(
+      eq(generationsTable.configId, configId),
+      eq(generationsTable.userGoogleId, userGoogleId)
+    ),
+    with: {
+      generatedScript: true,
+    },
+  });
+}
+
+export async function updateGenerationStatus(
+  id: string,
+  status: Generation["status"],
+  error?: string
+) {
+  await db
+    .update(generationsTable)
+    .set({ status, error, updatedAt: new Date().toISOString() })
+    .where(eq(generationsTable.id, id));
 }

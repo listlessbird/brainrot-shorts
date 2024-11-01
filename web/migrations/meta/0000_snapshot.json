@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "8ba8eff1-8c04-4a2e-8479-1068054016a2",
+  "id": "bdce6d68-c64f-4b4e-8502-430be100055e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "config": {
@@ -71,7 +71,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "config_user_google_id_user_google_id_fk": {
@@ -84,7 +84,7 @@
           "columnsTo": [
             "google_id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -115,7 +115,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "[]"
+          "default": "'[]'"
         },
         "user_google_id": {
           "name": "user_google_id",
@@ -137,7 +137,7 @@
           "columnsTo": [
             "google_id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -166,14 +166,14 @@
           "name": "speech_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "captions_url": {
           "name": "captions_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "video_url": {
@@ -189,7 +189,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "[]"
+          "default": "'[]'"
         },
         "config_id": {
           "name": "config_id",
@@ -202,7 +202,7 @@
           "name": "script_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "user_google_id": {
@@ -210,6 +210,21 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         }
       },
@@ -225,7 +240,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "generations_script_id_generated_script_id_fk": {
@@ -251,7 +266,7 @@
           "columnsTo": [
             "google_id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -341,7 +356,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "user_google_id_unique": {
+          "name": "user_google_id_unique",
+          "columns": [
+            "google_id"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}

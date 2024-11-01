@@ -19,6 +19,9 @@ export const db = drizzle(
 
     const data = await res.json();
 
+    // console.log("Response from cloudflare d1:", res);
+    console.log("Response from sqlite proxy server:", data);
+
     if (res.status !== 200)
       throw new Error(
         `Error from sqlite proxy server: ${res.status} ${

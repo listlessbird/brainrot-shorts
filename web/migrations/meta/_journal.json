@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1729331331595,
-      "tag": "0000_fancy_quicksilver",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1729331872810,
-      "tag": "0001_useful_black_tarantula",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1729331996704,
-      "tag": "0002_flashy_mongu",
+      "when": 1730445742684,
+      "tag": "0000_overconfident_nextwave",
       "breakpoints": true
     }
   ]

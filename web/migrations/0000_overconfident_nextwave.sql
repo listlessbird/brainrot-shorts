@@ -6,31 +6,33 @@ CREATE TABLE `config` (
 	`style` text NOT NULL,
 	`script_id` text,
 	`user_google_id` text NOT NULL,
-	FOREIGN KEY (`script_id`) REFERENCES `generated_script`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`script_id`) REFERENCES `generated_script`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `generated_script` (
 	`id` text PRIMARY KEY NOT NULL,
 	`created_at` text DEFAULT (current_timestamp) NOT NULL,
-	`script` text DEFAULT [] NOT NULL,
+	`script` text DEFAULT '[]' NOT NULL,
 	`user_google_id` text NOT NULL,
-	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `generations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`created_at` text DEFAULT (current_timestamp) NOT NULL,
-	`speech_url` text NOT NULL,
-	`captions_url` text NOT NULL,
+	`speech_url` text,
+	`captions_url` text,
 	`video_url` text,
-	`images` text DEFAULT [] NOT NULL,
+	`images` text DEFAULT '[]' NOT NULL,
 	`config_id` text NOT NULL,
-	`script_id` text NOT NULL,
+	`script_id` text,
 	`user_google_id` text NOT NULL,
-	FOREIGN KEY (`config_id`) REFERENCES `config`(`id`) ON UPDATE no action ON DELETE no action,
+	`status` text DEFAULT 'pending' NOT NULL,
+	`error` text,
+	FOREIGN KEY (`config_id`) REFERENCES `config`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`script_id`) REFERENCES `generated_script`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `session` (
@@ -47,3 +49,5 @@ CREATE TABLE `user` (
 	`google_id` text NOT NULL,
 	`picture` text NOT NULL
 );
+--> statement-breakpoint
+CREATE UNIQUE INDEX `user_google_id_unique` ON `user` (`google_id`);

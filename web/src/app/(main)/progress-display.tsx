@@ -13,6 +13,7 @@ export function ProgressDisplay() {
     const source = new EventSource("/api/progress");
 
     source.onmessage = (e) => {
+      console.log("Received progress update and attempting to parse:", e.data);
       const data = JSON.parse(e.data);
       setMessages((prevMessages) => [...prevMessages, data.message]);
     };
