@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { SideNavItems, SideNavItem } from "@/components/nav/constants";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/logo";
 export function SideNav() {
   return (
     <div className="md:w-16 lg:w-60 bg-background h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex shadow-md">
@@ -13,8 +14,7 @@ export function SideNav() {
           href="/"
           className="flex flex-row space-x-3 items-center justify-center lg:justify-start lg:px-6 border-b border-zinc-200 h-12 w-full"
         >
-          <span className="h-7 w-7 bg-zinc-300 rounded-lg" />
-          <span className="font-bold text-xl hidden lg:flex">Ai Short Gen</span>
+          <Logo />
         </Link>
 
         <div className="flex flex-col space-y-2  lg:px-6 md:px-3">

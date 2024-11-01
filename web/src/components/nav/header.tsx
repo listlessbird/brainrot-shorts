@@ -5,6 +5,7 @@ import { useSelectedLayoutSegment } from "next/navigation";
 import { useScroll } from "@/hooks/use-scroll";
 import Image from "next/image";
 import { UserButton } from "@/components/nav/user-button";
+import { Logo } from "@/components/logo";
 
 export function Header() {
   const scrolled = useScroll(5);
@@ -26,7 +27,7 @@ export function Header() {
             href="/"
             className="flex flex-row space-x-3 items-center justify-center md:hidden"
           >
-            <span className="h-7 w-7 bg-zinc-300 rounded-lg" />
+            <Logo />
             <span className="font-bold text-xl flex ">Short Video Gen</span>
           </Link>
         </div>

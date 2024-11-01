@@ -142,7 +142,7 @@ export function VideoConfigForm() {
                       className={cn(
                         "relative aspect-square rounded-lg overflow-hidden cursor-pointer transition-all",
                         field.value === value
-                          ? "ring-2 ring-primary ring-offset-2"
+                          ? "ring-2 ring-primary ring-offset-0"
                           : "hover:opacity-75"
                       )}
                       onClick={() => field.onChange(value)}
@@ -150,8 +150,9 @@ export function VideoConfigForm() {
                       <Image
                         src={src}
                         alt={value}
-                        layout="fill"
-                        className="rounded-lg object-cover"
+                        className="rounded-lg object-cover size-full"
+                        width={200}
+                        height={200}
                       />
                       {/* <div className="absolute inset-x-0 bottom-0 p-2 bg-black bg-opacity-50 text-white text-center text-sm font-medium">
                         {value}
