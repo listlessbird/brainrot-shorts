@@ -25,7 +25,7 @@ export function Header() {
         <div className="flex items-center space-x-4">
           <Link
             href="/"
-            className="flex flex-row space-x-3 items-center justify-center md:hidden"
+            className="flex flex-row space-x-3 items-center justify-center py-2"
           >
             <Logo />
             <span className="font-bold text-xl flex ">Sparkles</span>

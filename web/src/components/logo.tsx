@@ -1,5 +1,7 @@
+"use client";
 import Image from "next/image";
 import Icon from "@/app/icon.png";
+import Link from "next/link";
 export function Logo() {
   return (
     <div

@@ -13,14 +13,14 @@ export function SideNav() {
       sp-layout="sidebar"
     >
       <div className="flex flex-col space-y-6 w-full">
-        <Link
+        {/* <Link
           href="/"
           className="flex flex-row space-x-3 items-center justify-center lg:justify-start lg:px-6 border-b border-zinc-200 h-12 w-full"
         >
           <Logo />
-        </Link>
+        </Link> */}
 
-        <div className="flex flex-col space-y-2  lg:px-6 md:px-3">
+        <div className="flex flex-col space-y-2  lg:px-6 md:px-3 pt-12">
           {SideNavItems.map((item, idx) => {
             return <MenuItem key={idx} item={item} />;
           })}
