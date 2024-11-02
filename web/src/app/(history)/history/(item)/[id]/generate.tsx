@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { startGeneration } from "@/app/(main)/history/[id]/action";
+import { startGeneration } from "@/app/(history)/history/(item)/[id]/action";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {

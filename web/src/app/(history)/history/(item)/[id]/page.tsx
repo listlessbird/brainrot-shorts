@@ -3,7 +3,7 @@ import { GeneratedAssetType } from "@/types";
 import Image from "next/image";
 import { cache } from "react";
 import { r2, makeSignedUrl } from "@/lib/r2";
-import { Generate } from "@/app/(main)/history/[id]/generate";
+import { Generate } from "@/app/(history)/history/(item)/[id]/generate";
 import { notFound } from "next/navigation";
 import { validateRequest } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

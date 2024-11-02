@@ -8,7 +8,10 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 export function SideNav() {
   return (
-    <div className="md:w-16 lg:w-60 bg-background h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex shadow-md">
+    <div
+      className="md:w-16 lg:w-60 bg-background h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex shadow-md"
+      sp-layout="sidebar"
+    >
       <div className="flex flex-col space-y-6 w-full">
         <Link
           href="/"
