@@ -28,7 +28,7 @@ export function Header() {
             className="flex flex-row space-x-3 items-center justify-center md:hidden"
           >
             <Logo />
-            <span className="font-bold text-xl flex ">Short Video Gen</span>
+            <span className="font-bold text-xl flex ">Sparkles</span>
           </Link>
         </div>
 

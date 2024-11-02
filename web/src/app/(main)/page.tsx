@@ -18,7 +18,7 @@ export default async function Home() {
         <CardHeader>
           <CardTitle className="flex items-center text-3xl font-extrabold tracking-tight lg:text-4xl">
             <Sparkles className="mr-2 h-8 w-8" />
-            AI Shorts Generator
+            Sparkles
           </CardTitle>
           <CardDescription className="text-white/80">
             Create stunning short videos with the power of AI
