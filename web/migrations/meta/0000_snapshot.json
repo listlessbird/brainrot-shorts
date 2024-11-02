@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "bdce6d68-c64f-4b4e-8502-430be100055e",
+  "id": "f41be609-4fa8-4c14-9201-000c1f81aa8d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "config": {
@@ -35,20 +35,13 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "30"
+          "default": 30
         },
         "style": {
           "name": "style",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "script_id": {
-          "name": "script_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "user_google_id": {
@@ -61,19 +54,6 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "config_script_id_generated_script_id_fk": {
-          "name": "config_script_id_generated_script_id_fk",
-          "tableFrom": "config",
-          "tableTo": "generated_script",
-          "columnsFrom": [
-            "script_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "config_user_google_id_user_google_id_fk": {
           "name": "config_user_google_id_user_google_id_fk",
           "tableFrom": "config",
@@ -123,6 +103,13 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "config_id": {
+          "name": "config_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {},
@@ -136,6 +123,19 @@
           ],
           "columnsTo": [
             "google_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "generated_script_config_id_config_id_fk": {
+          "name": "generated_script_config_id_config_id_fk",
+          "tableFrom": "generated_script",
+          "tableTo": "config",
+          "columnsFrom": [
+            "config_id"
+          ],
+          "columnsTo": [
+            "id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -226,6 +226,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {},

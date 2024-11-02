@@ -12,7 +12,6 @@ const useLocalStorage = <T>(
     // Retrieve from localStorage
     const item = window.localStorage.getItem(key);
     if (item) {
-      console.log("item", item);
       setStoredValue(JSON.parse(item));
     }
   }, [key]);

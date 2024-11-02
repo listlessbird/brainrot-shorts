@@ -1,5 +1,12 @@
 import { InferSelectModel, relations, sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  integer,
+  sqliteTable,
+  text,
+  SQLiteText,
+  SQLiteInteger,
+} from "drizzle-orm/sqlite-core";
+
 export const generationsTable = sqliteTable("generations", {
   id: text("id").notNull().primaryKey(),
   createdAt: text("created_at")
@@ -14,23 +21,24 @@ export const generationsTable = sqliteTable("generations", {
     .default(sql`'[]'`),
   configId: text("config_id")
     .notNull()
-    .references(() => configTable.id, { onDelete: "cascade" }),
+    .references(() => configTable.configId, { onDelete: "cascade" }),
   scriptId: text("script_id").references(() => generatedScriptsTable.id),
   userGoogleId: text("user_google_id")
     .notNull()
     .references(() => userTable.googleId, { onDelete: "cascade" }),
-  status: text("status")
+  status: text("status", {
+    enum: [
+      "pending",
+      "script_ready",
+      "speech_ready",
+      "images_ready",
+      "captions_ready",
+      "complete",
+      "failed",
+    ],
+  })
     .notNull()
-    .default("pending")
-    .$type<
-      | "pending"
-      | "script_ready"
-      | "speech_ready"
-      | "images_ready"
-      | "captions_ready"
-      | "complete"
-      | "failed"
-    >(),
+    .default("pending"),
   error: text("error"),
   updatedAt: text("updated_at")
     .notNull()
@@ -38,39 +46,37 @@ export const generationsTable = sqliteTable("generations", {
 });
 
 export const configTable = sqliteTable("config", {
-  id: text("id").primaryKey(),
+  configId: text("id").notNull().primaryKey(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
   topic: text("topic").notNull(),
-  duration: integer("duration", { mode: "number" })
-    .notNull()
-    .default(sql`30`),
+  duration: integer("duration").notNull().default(30),
   style: text("style").notNull(),
-  scriptId: text("script_id").references(() => generatedScriptsTable.id, {
-    onDelete: "cascade",
-  }),
   userGoogleId: text("user_google_id")
     .notNull()
     .references(() => userTable.googleId, { onDelete: "cascade" }),
 });
 
 export const generatedScriptsTable = sqliteTable("generated_script", {
-  id: text("id").primaryKey(),
+  id: text("id").notNull().primaryKey(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
   script: text("script", { mode: "json" })
     .notNull()
-    .$type<{ imagePrompt: string; textContent: string }[]>()
+    .$type<Array<{ imagePrompt: string; textContent: string }>>()
     .default(sql`'[]'`),
   userGoogleId: text("user_google_id")
     .notNull()
     .references(() => userTable.googleId, { onDelete: "cascade" }),
+  configId: text("config_id").references(() => configTable.configId, {
+    onDelete: "cascade",
+  }),
 });
 
 export const userTable = sqliteTable("user", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
   email: text("email").notNull(),
   username: text("username").notNull(),
   googleId: text("google_id").notNull().unique(),
@@ -78,15 +84,14 @@ export const userTable = sqliteTable("user", {
 });
 
 export const sessionTable = sqliteTable("session", {
-  id: text("id").primaryKey(),
-  userId: integer("user_id")
+  id: text("id").notNull().primaryKey(),
+  userId: integer("user_id", { mode: "number" })
     .notNull()
     .references(() => userTable.id),
-  expiresAt: integer("expires_at", {
-    mode: "timestamp",
-  }).notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
 });
 
+// Relations remain the same
 export const userRelations = relations(userTable, ({ many }) => ({
   sessions: many(sessionTable),
   generations: many(generationsTable),
@@ -118,10 +123,7 @@ export const configRelations = relations(configTable, ({ one, many }) => ({
     fields: [configTable.userGoogleId],
     references: [userTable.googleId],
   }),
-  generatedScript: one(generatedScriptsTable, {
-    fields: [configTable.scriptId],
-    references: [generatedScriptsTable.id],
-  }),
+  script: one(generatedScriptsTable),
   generations: many(generationsTable),
 }));
 
@@ -132,7 +134,7 @@ export const generationsRelations = relations(generationsTable, ({ one }) => ({
   }),
   config: one(configTable, {
     fields: [generationsTable.configId],
-    references: [configTable.id],
+    references: [configTable.configId],
   }),
   generatedScript: one(generatedScriptsTable, {
     fields: [generationsTable.scriptId],
@@ -142,7 +144,6 @@ export const generationsRelations = relations(generationsTable, ({ one }) => ({
 
 export type User = InferSelectModel<typeof userTable>;
 export type Session = InferSelectModel<typeof sessionTable>;
-
 export type Generation = InferSelectModel<typeof generationsTable>;
 export type Config = InferSelectModel<typeof configTable>;
 export type GeneratedScript = InferSelectModel<typeof generatedScriptsTable>;

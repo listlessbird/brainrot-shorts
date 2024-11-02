@@ -51,7 +51,6 @@ export function VideoConfigForm() {
       topic: "default topic",
     }
   );
-  console.log("value", value);
 
   const form = useForm<CreateVideoScriptConfig>({
     resolver: zodResolver(createVideConfigSchema),

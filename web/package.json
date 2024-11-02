@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "db:gen": "drizzle-kit generate",
-    "db:mig": "drizzle-kit migrate"
+    "db:mig": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "debug": "NODE_OPTIONS='--inspect' next dev"
   },
   "dependencies": {
     "@ai-sdk/google": "^0.0.51",

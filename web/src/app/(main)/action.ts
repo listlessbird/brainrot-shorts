@@ -25,6 +25,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import pQueue from "p-queue";
 import { delay } from "@/lib/utils";
+import { GenerationService } from "@/lib/generation-service";
 
 const {
   CF_ACCOUNT_ID,
@@ -90,103 +91,131 @@ async function sendProgress(
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
   const { user } = await getCurrentSession();
 
-  if (!user) {
+  if (!user || !user.googleId) {
     return new Response("Unauthorized", {
       status: 401,
     });
   }
 
+  const generationService = new GenerationService(r2);
+  const sessionId = generateSessionId();
+
   console.log(
     "Starting createVideoScriptAction",
-    JSON.stringify(values, null, 2)
+    JSON.stringify({ values, user }, null, 2)
   );
-  const sessionId = generateSessionId();
   console.log("Generated session ID:", sessionId);
 
   // return;
-
   let configId: string;
-
   try {
     const validated = createVideConfigSchema.parse(values);
-    console.log("Input validation successful");
 
     const existingConfig = await getConfigByParams(validated, user.googleId);
+    console.log("existingConfig:", existingConfig);
     if (existingConfig) {
-      console.log("Existing configuration found");
+      console.log(
+        "existingConfig.config.configId:",
+        existingConfig.config.configId
+      );
+
       const existingGeneration = await getGenerationByConfigId(
-        existingConfig.config.id,
+        existingConfig.config.configId,
         user.googleId
       );
-      if (existingGeneration) {
-        console.log("Existing generation found, returning cached result");
-        return {
-          ...existingConfig.script?.script,
-          images: existingGeneration.images,
-          audio: existingGeneration.speechUrl,
-          captions: existingGeneration.captions_url,
-          sessionId: existingGeneration.id,
-        };
+
+      if (existingGeneration?.status === "complete") {
+        redirect(`/history/${existingConfig.config.configId}`);
       }
     }
 
-    configId = await storeConfig(sessionId, validated, user.googleId);
-    console.log("Stored configuration with ID:", configId);
+    configId =
+      existingConfig?.config.configId ||
+      (await storeConfig(sessionId, validated, user.googleId));
 
-    await sendProgress("Generating script");
-    const { object } = await generateScriptWithAI(validated);
-    console.log(
-      "AI script generation complete",
-      JSON.stringify({ object }, null, 2)
+    let state = await generationService.getOrCreateGenerationState(
+      configId,
+      user.googleId
     );
 
-    const scriptId = await storeScript(object.scenes, configId, user.googleId);
-    console.log("Stored script with ID:", scriptId);
+    try {
+      if (!state.script) {
+        await sendProgress("Generating script");
+        const { object } = await generateScriptWithAI(validated);
+        const scriptId = await storeScript(
+          object.scenes,
+          configId,
+          user.googleId
+        );
 
-    const fullText = object.scenes.map((s) => s.textContent).join(" ");
+        state.script = { scenes: object.scenes, scriptId };
+        state.status = "script_ready";
+        await generationService.updateGenerationState(state.id, state);
+      }
 
-    const [speech, images] = await Promise.all([
-      synthesizeSpeech(fullText, GOOGLE_API_KEY!),
-      generateImages(
-        object.scenes.map((s) => s.imagePrompt),
-        sessionId
-      ),
-    ]);
+      if (state.status === "script_ready" && !state.speech) {
+        await sendProgress("Synthesizing speech");
+        const fullText = state.script.scenes
+          .map((s) => s.textContent)
+          .join(" ");
 
-    console.log("Speech synthesis and image generation complete");
+        const speech = await synthesizeSpeech(fullText, GOOGLE_API_KEY!);
+        const audioUploadResult = await uploadAudioToR2(
+          speech.audioContent,
+          configId
+        );
 
-    const audioUploadResult = await uploadAudioToR2(
-      speech.audioContent,
-      sessionId
-    );
-    console.log("Audio uploaded", audioUploadResult);
+        state.speech = {
+          url: audioUploadResult.url,
+          signedUrl: audioUploadResult.signedUrl,
+        };
+        state.status = "speech_ready";
+        await generationService.updateGenerationState(state.id, state);
+      }
 
-    const captions = await generateCaptions(audioUploadResult.signedUrl);
-    const captionUrl = captions.words
-      ? await uploadCaptionsToR2(captions.words, sessionId)
-      : null;
+      if (
+        state.status === "speech_ready" &&
+        (!state.images || state.images.length < state.script.scenes.length)
+      ) {
+        await sendProgress("Generating images");
 
-    const generationId = await storeGeneration({
-      speechUrl: audioUploadResult.url,
-      captionsUrl: captionUrl?.url || null,
-      images: images,
-      configId: configId,
-      scriptId: scriptId,
-      userGoogleId: user.googleId,
-    });
-    console.log("Stored generation with ID:", generationId);
+        const missingImagePrompts = state.script.scenes
+          .map((s) => s.imagePrompt)
+          .slice(state.images?.length || 0);
 
-    await sendProgress("Script generation completed successfully", "success");
+        const newImages = await generateImages(missingImagePrompts, configId);
+        state.images = [...(state.images || []), ...newImages];
+        state.status = "images_ready";
+        await generationService.updateGenerationState(state.id, state);
+      }
 
-    // return {
-    //   ...object,
-    //   images,
-    //   audio: audioUploadResult.signedUrl,
-    //   captions: captionUrl,
-    //   sessionId: generationId,
-    // };
+      if (state.status === "images_ready" && state.speech && !state.captions) {
+        await sendProgress("Generating captions");
+
+        const captions = await generateCaptions(state.speech.signedUrl);
+        if (captions.words) {
+          const captionUpload = await uploadCaptionsToR2(
+            captions.words,
+            configId
+          );
+          state.captions = {
+            url: captionUpload.url,
+            signedUrl: captionUpload.signedUrl,
+          };
+        }
+        state.status = "complete";
+        await generationService.updateGenerationState(state.id, state);
+      }
+
+      await sendProgress("Script generation completed successfully", "success");
+    } catch (error) {
+      state.status = "failed";
+      state.error = error instanceof Error ? error.message : "Unknown error";
+      await generationService.updateGenerationState(state.id, state);
+      throw error;
+    }
   } catch (error) {
-    console.error("Error in createVideoScriptAction", error);
+    console.error("Error in createVideoScriptAction:", error);
     await sendProgress(
       `Error in video generation: ${
         error instanceof Error ? error.message : "Unknown error"
@@ -195,6 +224,7 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
     );
     throw error;
   }
+
   redirect(`/history/${configId}`);
 }
 

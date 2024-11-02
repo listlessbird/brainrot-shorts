@@ -5,8 +5,7 @@ const { CF_ID, D1_ID, D1_KEY } = process.env;
 
 export const db = drizzle(
   async (sql, params, method) => {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${process.env
-      .CF_ID!}/d1/database/${D1_ID!}/query`;
+    const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ID!}/d1/database/${D1_ID!}/query`;
 
     const res = await fetch(url, {
       method: "POST",
@@ -20,7 +19,7 @@ export const db = drizzle(
     const data = await res.json();
 
     // console.log("Response from cloudflare d1:", res);
-    console.log("Response from sqlite proxy server:", data);
+    // console.log("Response from sqlite proxy server:", data);
 
     if (res.status !== 200)
       throw new Error(
@@ -34,6 +33,8 @@ export const db = drizzle(
       );
 
     const qResult = data.result[0];
+
+    console.log("DB Result: ", { result: data.result[0].results });
 
     if (!qResult.success)
       throw new Error(

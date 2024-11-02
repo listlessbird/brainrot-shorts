@@ -4,9 +4,7 @@ CREATE TABLE `config` (
 	`topic` text NOT NULL,
 	`duration` integer DEFAULT 30 NOT NULL,
 	`style` text NOT NULL,
-	`script_id` text,
 	`user_google_id` text NOT NULL,
-	FOREIGN KEY (`script_id`) REFERENCES `generated_script`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
@@ -15,7 +13,9 @@ CREATE TABLE `generated_script` (
 	`created_at` text DEFAULT (current_timestamp) NOT NULL,
 	`script` text DEFAULT '[]' NOT NULL,
 	`user_google_id` text NOT NULL,
-	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE cascade
+	`config_id` text,
+	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`config_id`) REFERENCES `config`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `generations` (
@@ -30,6 +30,7 @@ CREATE TABLE `generations` (
 	`user_google_id` text NOT NULL,
 	`status` text DEFAULT 'pending' NOT NULL,
 	`error` text,
+	`updated_at` text DEFAULT (current_timestamp) NOT NULL,
 	FOREIGN KEY (`config_id`) REFERENCES `config`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`script_id`) REFERENCES `generated_script`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`user_google_id`) REFERENCES `user`(`google_id`) ON UPDATE no action ON DELETE cascade

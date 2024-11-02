@@ -10,19 +10,23 @@ import {
 } from "./schema";
 import { eq, and, desc } from "drizzle-orm";
 import { CreateVideoScriptConfig } from "@/lib/validations";
+import { config } from "process";
 export async function storeConfig(
   configId: string,
   config: CreateVideoScriptConfig,
   userGoogleId: string
 ): Promise<string> {
-  await db.insert(configTable).values({
-    id: configId,
-    topic: config.topic,
-    duration: config.duration,
-    style: config.style,
-    userGoogleId,
-  });
-  return configId;
+  const result = await db
+    .insert(configTable)
+    .values({
+      configId,
+      topic: config.topic,
+      duration: config.duration,
+      style: config.style,
+      userGoogleId,
+    })
+    .returning({ id: configTable.configId });
+  return result[0].id;
 }
 
 export async function storeScript(
@@ -35,16 +39,9 @@ export async function storeScript(
     id: scriptId,
     script: script,
     userGoogleId,
+    configId,
   });
-  await db
-    .update(configTable)
-    .set({ scriptId })
-    .where(
-      and(
-        eq(configTable.id, configId),
-        eq(configTable.userGoogleId, userGoogleId)
-      )
-    );
+
   return scriptId;
 }
 
@@ -65,6 +62,7 @@ export async function storeGeneration(data: {
     configId: data.configId,
     scriptId: data.scriptId,
     userGoogleId: data.userGoogleId,
+    video_url: null,
   });
   return generationId;
 }
@@ -98,10 +96,10 @@ export async function getGenerationById(id: string, userGoogleId: string) {
       script: generatedScriptsTable,
     })
     .from(generationsTable)
-    .leftJoin(configTable, eq(generationsTable.configId, configTable.id))
+    .leftJoin(configTable, eq(generationsTable.configId, configTable.configId))
     .leftJoin(
       generatedScriptsTable,
-      eq(generationsTable.scriptId, generatedScriptsTable.id)
+      eq(generationsTable.configId, configTable.configId)
     )
     .where(
       and(
@@ -124,7 +122,7 @@ export async function getAllGenerations(userGoogleId: string) {
       duration: configTable.duration,
     })
     .from(generationsTable)
-    .leftJoin(configTable, eq(generationsTable.configId, configTable.id))
+    .leftJoin(configTable, eq(generationsTable.configId, configTable.configId))
     .leftJoin(
       generatedScriptsTable,
       eq(generationsTable.scriptId, generatedScriptsTable.id)
@@ -157,12 +155,15 @@ export async function getAllGenerationsByConfigId(
     .from(configTable)
     .leftJoin(
       generatedScriptsTable,
-      eq(generatedScriptsTable.id, configTable.scriptId)
+      eq(generatedScriptsTable.configId, configTable.configId)
     )
-    .leftJoin(generationsTable, eq(generationsTable.configId, configTable.id))
+    .leftJoin(
+      generationsTable,
+      eq(generationsTable.configId, configTable.configId)
+    )
     .where(
       and(
-        eq(configTable.id, configId),
+        eq(configTable.configId, configId),
         eq(configTable.userGoogleId, userGoogleId)
       )
     )
@@ -174,22 +175,27 @@ export async function getConfigByParams(
   params: CreateVideoScriptConfig,
   userGoogleId: string
 ) {
-  const config = await db.query.configTable.findFirst({
-    where: and(
-      eq(configTable.topic, params.topic),
-      eq(configTable.duration, params.duration),
-      eq(configTable.style, params.style),
-      eq(configTable.userGoogleId, userGoogleId)
-    ),
-    with: {
-      generatedScript: true,
-    },
-  });
+  console.log("inside getConfigByParams:", params, "googleId", userGoogleId);
 
-  if (!config) return null;
+  const config = await db
+    .select({
+      config: configTable,
+    })
+    .from(configTable)
+    .where(
+      and(
+        eq(configTable.topic, params.topic),
+        eq(configTable.duration, params.duration),
+        eq(configTable.style, params.style),
+        eq(configTable.userGoogleId, userGoogleId)
+      )
+    );
+
+  console.log("inside getConfigByParams:", config);
+
+  if (!config.length) return null;
   return {
-    config,
-    script: config.generatedScript,
+    config: config[0].config,
   };
 }
 
@@ -197,15 +203,31 @@ export async function getGenerationByConfigId(
   configId: string,
   userGoogleId: string
 ) {
-  return db.query.generationsTable.findFirst({
-    where: and(
-      eq(generationsTable.configId, configId),
-      eq(generationsTable.userGoogleId, userGoogleId)
-    ),
-    with: {
-      generatedScript: true,
-    },
-  });
+  console.log("inside getGenerationByConfigId:", { configId, userGoogleId });
+
+  const q = await db
+    .select({
+      generation: generationsTable,
+      genratedScript: generatedScriptsTable,
+    })
+    .from(generationsTable)
+    .leftJoin(
+      generatedScriptsTable,
+      eq(generationsTable.scriptId, generatedScriptsTable.id)
+    )
+    .where(
+      and(
+        eq(generationsTable.configId, configId),
+        eq(generationsTable.userGoogleId, userGoogleId)
+      )
+    )
+    .limit(1);
+
+  console.log("inside getGenerationByConfigId:", q);
+
+  if (!q.length) return null;
+
+  return { ...q[0].generation, generatedScript: q[0].genratedScript };
 }
 
 export async function updateGenerationStatus(
