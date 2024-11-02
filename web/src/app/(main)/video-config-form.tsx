@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
@@ -31,6 +31,7 @@ import {
 import { useVideoConfigMutation } from "@/app/(main)/use-video-config-mutation";
 import { ProgressDisplay } from "@/app/(main)/progress-display";
 import { cn } from "@/lib/utils";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 const groups = [
   { value: "fairy-tale", src: "/fairy-tale.jpg" },
@@ -41,19 +42,35 @@ const groups = [
 
 export function VideoConfigForm() {
   const [stats, showStats] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [value, setValue] = useLocalStorage<CreateVideoScriptConfig>(
+    "video-config-form",
+    {
+      duration: 30 * 1000,
+      style: "",
+      topic: "default topic",
+    }
+  );
+  console.log("value", value);
 
   const form = useForm<CreateVideoScriptConfig>({
     resolver: zodResolver(createVideConfigSchema),
     defaultValues: {
-      duration: 30 * 1000,
-      style: "fairy-tale",
-      topic: "snow white and her boyfriend",
+      duration: value.duration,
+      style: value.style,
+      topic: value.topic,
     },
   });
+
+  useEffect(() => {
+    form.reset(value);
+    setLoaded(true);
+  }, [form, value]);
 
   const { mutate, isPending } = useVideoConfigMutation();
 
   const onSubmit = async (values: CreateVideoScriptConfig) => {
+    setValue(values);
     showStats(true);
     console.log("Video Config:", values);
 
