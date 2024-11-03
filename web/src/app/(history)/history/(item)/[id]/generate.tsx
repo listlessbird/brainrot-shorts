@@ -87,7 +87,7 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
           </p>
           <Button
             onClick={handleGeneration}
-            disabled={isPending}
+            disabled={isPending || progress === 100}
             className="w-full"
           >
             {isPending ? (
