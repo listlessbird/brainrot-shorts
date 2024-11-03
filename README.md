@@ -1,6 +1,6 @@
-# AI Short Generator
+# Sparkles
 
-AI Short Generator is a web application that allows users to create short-form videos using AI.
+Sparkles is a web application that allows users to create short-form videos using AI.
 
 ## Getting Started
 
@@ -99,6 +99,15 @@ This will build and start the necessary Docker containers for the web interface 
 - Bun
 - Remotion
 - Docker
+
+## Screenshots
+
+![Screenshot 1](assets/screenshot-0_.png)
+![Screenshot 2](assets/screenshot-1_history.png)
+![Screenshot 3](assets/screenshot-2_history.png)
+![Screenshot 4](assets/screenshot-4_history_session-cd12.png)
+![Screenshot 5](assets/brave_3MjBtW9rom.png)
+![Screenshot 6](assets/brave_rsfNWvgLbB.png)
 
 ## Contributing
 
