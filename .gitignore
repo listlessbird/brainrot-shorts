@@ -1,2 +1,3 @@
 secrets
 .env
+run-compose.sh
