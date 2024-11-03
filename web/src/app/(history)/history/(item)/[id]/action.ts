@@ -4,6 +4,7 @@ import { storeGeneratedVideo } from "@/db/db-fns";
 import { validateRequest } from "@/lib/auth";
 import { uploadVideoToR2 } from "@/lib/r2";
 import { GeneratedAssetType } from "@/types";
+import { revalidatePath } from "next/cache";
 
 export async function startGeneration({
   asset,
@@ -85,6 +86,8 @@ export async function startGeneration({
               JSON.stringify({ status: "Upload complete", signedUrl }) + "\n"
             )
           );
+
+          revalidatePath(`/history/${asset.configId}`);
         } catch (error) {
           console.error("Error uploading to R2:", error);
           controller.enqueue(
