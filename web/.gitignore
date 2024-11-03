@@ -40,3 +40,6 @@ next-env.d.ts
 .wrangler
 .dev.vars
 scratch.ts
+
+secrets.ps1
+fly.toml
