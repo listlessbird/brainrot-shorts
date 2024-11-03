@@ -11,7 +11,7 @@ export default async function Home() {
         Generations
       </h1>
       {/* <VideoConfigForm /> */}
-      <div className="my-4 flex flex-wrap gap-2 md:gap-4">
+      <div className="my-4 flex flex-wrap gap-2 md:gap-4 items-center justify-center">
         <Suspense fallback={<Loading />}>
           <History userGoogleId={user.googleId} />
         </Suspense>
