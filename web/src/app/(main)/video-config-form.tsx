@@ -32,6 +32,7 @@ import { useVideoConfigMutation } from "@/app/(main)/use-video-config-mutation";
 import { ProgressDisplay } from "@/app/(main)/progress-display";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import DummyTest from "@/app/(main)/progress-test";
 
 const groups = [
   { value: "fairy-tale", src: "/fairy-tale.jpg" },
@@ -192,6 +193,7 @@ export function VideoConfigForm() {
         />
 
         {stats && <ProgressDisplay />}
+        {/* <DummyTest /> */}
         <Button type="submit" className="w-full" disabled={isPending}>
           {isPending ? (
             <>

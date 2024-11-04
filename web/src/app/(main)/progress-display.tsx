@@ -44,7 +44,7 @@ export function ProgressDisplay() {
           console.error("SSE error:", e);
           setError("Connection lost. Retrying...");
           eventSource?.close();
-          setTimeout(connectSSE, 5000); // Retry after 5 seconds
+          setTimeout(connectSSE, 5000);
         };
 
         eventSource.onopen = () => {
@@ -84,70 +84,86 @@ export function ProgressDisplay() {
           {error && <span className="ml-2 text-sm text-red-500">{error}</span>}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea
-          ref={scrollAreaRef}
-          className="h-[300px] w-full rounded-md border p-4 relative"
-        >
-          {/* Timeline track */}
-          {messages.length > 0 && (
-            <div className="absolute left-[21px] top-[24px] w-0.5 h-[calc(100%-48px)] bg-orange-200" />
-          )}
+      <CardContent className="p-2">
+        <ScrollArea ref={scrollAreaRef} className="h-[300px] w-full rounded-md">
+          <div className="relative px-4">
+            {/* Timeline track */}
+            {messages.length > 0 && (
+              <div
+                className="absolute top-[10px] w-0.5 h-[calc(100%-20px)] bg-orange-200"
+                style={{ left: "23px" }}
+              />
+            )}
 
-          <AnimatePresence initial={false}>
-            {messages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Waiting for progress updates...
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <motion.div
-                    key={`${message.timestamp}-${index}`}
-                    initial={{ opacity: 0, y: 20, x: 0 }}
-                    animate={{ opacity: 1, y: 0, x: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="relative"
-                    ref={index === messages.length - 1 ? lastMessageRef : null}
-                  >
-                    <div className="flex items-start space-x-3">
-                      {/* Timeline dot with pulse effect */}
-                      <div className="relative flex items-center justify-center pt-2">
-                        <div
-                          className={`w-4 h-4 rounded-full ${getStatusColor(
-                            message.status
-                          )} z-10`}
-                        >
-                          {index === messages.length - 1 && (
-                            <div className="absolute inset-0 rounded-full animate-ping bg-orange-400 opacity-75" />
-                          )}
+            <AnimatePresence>
+              {messages.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Waiting for progress updates...
+                </p>
+              ) : (
+                <div className="relative space-y-4">
+                  {messages.map((message, index) => (
+                    <motion.div
+                      key={`${message.timestamp}-${index}`}
+                      initial={{ opacity: 0, y: 20, x: 0 }}
+                      animate={{ opacity: 1, y: 0, x: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="relative"
+                      ref={
+                        index === messages.length - 1 ? lastMessageRef : null
+                      }
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Timeline dot with ping effect - Now using absolute positioning */}
+                        <div className="relative mt-2">
+                          <div className="relative size-4">
+                            <div
+                              className={`size-4 rounded-full ${getStatusColor(
+                                message.status
+                              )} z-10 relative`}
+                              nd-sparkles-me="indicator"
+                            />
+                            {index === messages.length - 1 && (
+                              <div
+                                className="absolute inset-0 rounded-full animate-ping opacity-75"
+                                style={{
+                                  backgroundColor:
+                                    message.status === "error"
+                                      ? "#ef4444"
+                                      : message.status === "success"
+                                      ? "#22c55e"
+                                      : "#f97316",
+                                }}
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Message content */}
+                        <div className="flex-1 bg-orange-50 rounded-lg p-3 shadow-sm min-w-0">
+                          <p
+                            className={`text-sm ${
+                              message.status === "error"
+                                ? "text-red-600"
+                                : message.status === "success"
+                                ? "text-green-600"
+                                : "text-orange-800"
+                            }`}
+                          >
+                            {message.message}
+                          </p>
+                          <span className="text-xs text-orange-400 mt-1 block">
+                            {new Date(message.timestamp).toLocaleTimeString()}
+                          </span>
                         </div>
                       </div>
-
-                      {/* Message content */}
-                      <div className="flex-1 bg-orange-50 rounded-lg p-3 shadow-sm">
-                        <p
-                          className={`text-sm ${
-                            message.status === "error"
-                              ? "text-red-600"
-                              : message.status === "success"
-                              ? "text-green-600"
-                              : "text-orange-800"
-                          }`}
-                        >
-                          {message.message}
-                        </p>
-                        <span className="text-xs text-orange-400 mt-1 block">
-                          {new Date(message.timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </AnimatePresence>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
         </ScrollArea>
       </CardContent>
     </Card>
