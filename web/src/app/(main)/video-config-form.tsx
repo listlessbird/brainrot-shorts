@@ -40,6 +40,12 @@ const groups = [
   { value: "pixel", src: "/pixel.jpg" },
 ];
 
+const defaultTopics = [
+  "snowwhite and her boyfriend",
+  "nier and yonah",
+  "link and the goblin king",
+];
+
 export function VideoConfigForm() {
   const [stats, showStats] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -48,7 +54,7 @@ export function VideoConfigForm() {
     {
       duration: 30 * 1000,
       style: "",
-      topic: "default topic",
+      topic: defaultTopics[Math.floor(Math.random() * defaultTopics.length)],
     }
   );
 
