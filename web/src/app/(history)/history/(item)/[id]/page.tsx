@@ -97,7 +97,7 @@ function GeneratedAsset({ asset }: { asset: GeneratedAssetType }) {
     videoUrl,
   } = asset;
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date) => {
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
