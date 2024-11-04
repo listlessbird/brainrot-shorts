@@ -13,6 +13,7 @@ interface ProgressMessage {
 
 export function ProgressDisplay() {
   const [messages, setMessages] = useState<ProgressMessage[]>([]);
+  const [showTopBlur, setShowTopBlur] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
@@ -20,6 +21,7 @@ export function ProgressDisplay() {
   useEffect(() => {
     if (lastMessageRef.current) {
       lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+      setShowTopBlur(true);
     }
   }, [messages]);
 
@@ -75,6 +77,11 @@ export function ProgressDisplay() {
     }
   };
 
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLDivElement;
+    setShowTopBlur(target.scrollTop > 20);
+  };
+
   return (
     <Card className="mt-6">
       <CardHeader>
@@ -85,7 +92,16 @@ export function ProgressDisplay() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-2">
-        <ScrollArea ref={scrollAreaRef} className="h-[300px] w-full rounded-md">
+        <ScrollArea
+          ref={scrollAreaRef}
+          className="h-[300px] w-full rounded-md"
+          onScrollCapture={handleScroll}
+        >
+          {showTopBlur && (
+            <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none">
+              <div className="h-16 bg-gradient-to-b from-background via-background/20 to-transparent" />
+            </div>
+          )}
           <div className="relative px-4">
             {/* Timeline track */}
             {messages.length > 0 && (
@@ -115,7 +131,7 @@ export function ProgressDisplay() {
                       }
                     >
                       <div className="flex items-start gap-3">
-                        {/* Timeline dot with ping effect - Now using absolute positioning */}
+                        {/* Timeline dot */}
                         <div className="relative mt-2">
                           <div className="relative size-4">
                             <div
