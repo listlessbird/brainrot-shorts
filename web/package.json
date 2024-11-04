@@ -9,7 +9,7 @@
     "lint": "next lint",
     "db:gen": "drizzle-kit generate",
     "db:mig": "bun --env-file=.env.development drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
+    "db:push": "bun --env-file=.env.development drizzle-kit push",
     "turbo": "docker compose -f compose.dev.yml up -d && NODE_OPTIONS='--inspect' next dev --turbo",
     "db:stu": "bun --env-file=.env.development drizzle-kit studio"
   },

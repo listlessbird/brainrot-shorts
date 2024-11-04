@@ -23,7 +23,7 @@ export const generationStatusEnum = pgEnum("generation_status", [
 ]);
 
 export const generationsTable = pgTable("generations", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: text("id").notNull().primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -34,7 +34,7 @@ export const generationsTable = pgTable("generations", {
     .array()
     .notNull()
     .default(sql`ARRAY[]::text[]`),
-  configId: uuid("config_id")
+  configId: text("config_id")
     .notNull()
     .references(() => configTable.configId, { onDelete: "cascade" }),
   scriptId: uuid("script_id").references(() => generatedScriptsTable.id),
@@ -49,7 +49,7 @@ export const generationsTable = pgTable("generations", {
 });
 
 export const configTable = pgTable("config", {
-  configId: uuid("id").primaryKey().defaultRandom(),
+  configId: text("id").notNull().primaryKey(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   topic: text("topic").notNull(),
   duration: integer("duration").notNull().default(30),
@@ -69,7 +69,7 @@ export const generatedScriptsTable = pgTable("generated_script", {
   userGoogleId: text("user_google_id")
     .notNull()
     .references(() => userTable.googleId, { onDelete: "cascade" }),
-  configId: uuid("config_id").references(() => configTable.configId, {
+  configId: text("config_id").references(() => configTable.configId, {
     onDelete: "cascade",
   }),
 });

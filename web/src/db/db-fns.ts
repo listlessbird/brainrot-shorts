@@ -34,38 +34,16 @@ export async function storeScript(
   configId: string,
   userGoogleId: string
 ): Promise<string> {
-  const scriptId = randomUUID();
-  await db.insert(generatedScriptsTable).values({
-    id: scriptId,
-    script: script,
-    userGoogleId,
-    configId,
-  });
-
-  return scriptId;
-}
-
-export async function storeGeneration(data: {
-  speechUrl: string;
-  captionsUrl: string | null;
-  images: string[];
-  configId: string;
-  scriptId: string;
-  userGoogleId: string;
-}): Promise<string> {
-  const generationId = await db
-    .insert(generationsTable)
+  const storedScript = await db
+    .insert(generatedScriptsTable)
     .values({
-      speechUrl: data.speechUrl,
-      captionsUrl: data.captionsUrl ?? "",
-      images: data.images,
-      configId: data.configId,
-      scriptId: data.scriptId,
-      userGoogleId: data.userGoogleId,
-      videoUrl: null,
+      script: script,
+      userGoogleId,
+      configId,
     })
-    .returning({ id: generationsTable.id });
-  return generationId[0].id;
+    .returning({ id: generatedScriptsTable.id });
+
+  return storedScript[0].id;
 }
 
 export async function storeGeneratedVideo({
