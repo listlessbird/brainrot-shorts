@@ -52,12 +52,12 @@ export class GenerationService {
           }
         : undefined,
       images: generation.images,
-      captions: generation.captions_url
+      captions: generation.captionsUrl
         ? {
-            url: generation.captions_url,
+            url: generation.captionsUrl,
             signedUrl: await makeSignedUrl(
               this.r2,
-              generation.captions_url.split(".com/")[1],
+              generation.captionsUrl.split(".com/")[1],
               this.bucketName
             ),
           }
@@ -72,7 +72,7 @@ export class GenerationService {
       .update(generationsTable)
       .set({
         speechUrl: state.speech?.url,
-        captions_url: state.captions?.url,
+        captionsUrl: state.captions?.url,
         images: state.images,
         status: state.status,
         error: state.error,

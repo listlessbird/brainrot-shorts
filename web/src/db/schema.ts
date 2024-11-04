@@ -1,55 +1,56 @@
-import { InferSelectModel, relations, sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
-  integer,
-  sqliteTable,
+  pgTable,
   text,
-  SQLiteText,
-  SQLiteInteger,
-} from "drizzle-orm/sqlite-core";
+  timestamp,
+  integer,
+  varchar,
+  uuid,
+  pgEnum,
+  serial,
+  jsonb,
+} from "drizzle-orm/pg-core";
+import { type InferSelectModel } from "drizzle-orm";
 
-export const generationsTable = sqliteTable("generations", {
+export const generationStatusEnum = pgEnum("generation_status", [
+  "pending",
+  "script_ready",
+  "speech_ready",
+  "images_ready",
+  "captions_ready",
+  "complete",
+  "failed",
+]);
+
+export const generationsTable = pgTable("generations", {
   id: text("id").notNull().primaryKey(),
-  createdAt: text("created_at")
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
-    .default(sql`(current_timestamp)`),
+    .defaultNow(),
   speechUrl: text("speech_url"),
-  captions_url: text("captions_url"),
-  video_url: text("video_url"),
-  images: text("images", { mode: "json" })
+  captionsUrl: text("captions_url"),
+  videoUrl: text("video_url"),
+  images: text("images")
+    .array()
     .notNull()
-    .$type<string[]>()
-    .default(sql`'[]'`),
+    .default(sql`ARRAY[]::text[]`),
   configId: text("config_id")
     .notNull()
     .references(() => configTable.configId, { onDelete: "cascade" }),
-  scriptId: text("script_id").references(() => generatedScriptsTable.id),
+  scriptId: uuid("script_id").references(() => generatedScriptsTable.id),
   userGoogleId: text("user_google_id")
     .notNull()
     .references(() => userTable.googleId, { onDelete: "cascade" }),
-  status: text("status", {
-    enum: [
-      "pending",
-      "script_ready",
-      "speech_ready",
-      "images_ready",
-      "captions_ready",
-      "complete",
-      "failed",
-    ],
-  })
-    .notNull()
-    .default("pending"),
+  status: generationStatusEnum("status").notNull().default("pending"),
   error: text("error"),
-  updatedAt: text("updated_at")
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
-    .default(sql`(current_timestamp)`),
+    .defaultNow(),
 });
 
-export const configTable = sqliteTable("config", {
+export const configTable = pgTable("config", {
   configId: text("id").notNull().primaryKey(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   topic: text("topic").notNull(),
   duration: integer("duration").notNull().default(30),
   style: text("style").notNull(),
@@ -58,15 +59,13 @@ export const configTable = sqliteTable("config", {
     .references(() => userTable.googleId, { onDelete: "cascade" }),
 });
 
-export const generatedScriptsTable = sqliteTable("generated_script", {
-  id: text("id").notNull().primaryKey(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
-  script: text("script", { mode: "json" })
-    .notNull()
+export const generatedScriptsTable = pgTable("generated_script", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  script: jsonb("script")
     .$type<Array<{ imagePrompt: string; textContent: string }>>()
-    .default(sql`'[]'`),
+    .notNull()
+    .default([]),
   userGoogleId: text("user_google_id")
     .notNull()
     .references(() => userTable.googleId, { onDelete: "cascade" }),
@@ -75,23 +74,21 @@ export const generatedScriptsTable = sqliteTable("generated_script", {
   }),
 });
 
-export const userTable = sqliteTable("user", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+export const userTable = pgTable("user", {
+  googleId: text("google_id").primaryKey(),
   email: text("email").notNull(),
   username: text("username").notNull(),
-  googleId: text("google_id").notNull().unique(),
   picture: text("picture").notNull(),
 });
 
-export const sessionTable = sqliteTable("session", {
-  id: text("id").notNull().primaryKey(),
-  userId: integer("user_id", { mode: "number" })
+export const sessionTable = pgTable("session", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
     .notNull()
-    .references(() => userTable.id),
-  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    .references(() => userTable.googleId, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at").notNull(),
 });
 
-// Relations remain the same
 export const userRelations = relations(userTable, ({ many }) => ({
   sessions: many(sessionTable),
   generations: many(generationsTable),
@@ -102,7 +99,7 @@ export const userRelations = relations(userTable, ({ many }) => ({
 export const sessionRelations = relations(sessionTable, ({ one }) => ({
   user: one(userTable, {
     fields: [sessionTable.userId],
-    references: [userTable.id],
+    references: [userTable.googleId],
   }),
 }));
 
@@ -113,8 +110,10 @@ export const generatedScriptsRelations = relations(
       fields: [generatedScriptsTable.userGoogleId],
       references: [userTable.googleId],
     }),
-    generations: many(generationsTable),
-    configs: one(configTable),
+    config: one(configTable, {
+      fields: [generatedScriptsTable.configId],
+      references: [configTable.configId],
+    }),
   })
 );
 
@@ -123,8 +122,8 @@ export const configRelations = relations(configTable, ({ one, many }) => ({
     fields: [configTable.userGoogleId],
     references: [userTable.googleId],
   }),
-  script: one(generatedScriptsTable),
   generations: many(generationsTable),
+  generatedScriptsRelations: many(generatedScriptsTable),
 }));
 
 export const generationsRelations = relations(generationsTable, ({ one }) => ({

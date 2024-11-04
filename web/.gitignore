@@ -26,8 +26,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
-.env
+.env*
+!.env.example
 
 # vercel
 .vercel
@@ -43,4 +43,3 @@ scratch.ts
 
 secrets.ps1
 fly.toml
-.env.prod

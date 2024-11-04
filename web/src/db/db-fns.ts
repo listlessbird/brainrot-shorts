@@ -34,37 +34,16 @@ export async function storeScript(
   configId: string,
   userGoogleId: string
 ): Promise<string> {
-  const scriptId = randomUUID();
-  await db.insert(generatedScriptsTable).values({
-    id: scriptId,
-    script: script,
-    userGoogleId,
-    configId,
-  });
+  const storedScript = await db
+    .insert(generatedScriptsTable)
+    .values({
+      script: script,
+      userGoogleId,
+      configId,
+    })
+    .returning({ id: generatedScriptsTable.id });
 
-  return scriptId;
-}
-
-export async function storeGeneration(data: {
-  speechUrl: string;
-  captionsUrl: string | null;
-  images: string[];
-  configId: string;
-  scriptId: string;
-  userGoogleId: string;
-}): Promise<string> {
-  const generationId = randomUUID();
-  await db.insert(generationsTable).values({
-    id: generationId,
-    speechUrl: data.speechUrl,
-    captions_url: data.captionsUrl ?? "",
-    images: data.images,
-    configId: data.configId,
-    scriptId: data.scriptId,
-    userGoogleId: data.userGoogleId,
-    video_url: null,
-  });
-  return generationId;
+  return storedScript[0].id;
 }
 
 export async function storeGeneratedVideo({
@@ -78,14 +57,14 @@ export async function storeGeneratedVideo({
 }) {
   return db
     .update(generationsTable)
-    .set({ video_url: r2Url })
+    .set({ videoUrl: r2Url })
     .where(
       and(
         eq(generationsTable.configId, configId),
         eq(generationsTable.userGoogleId, userGoogleId)
       )
     )
-    .returning({ url: generationsTable.video_url });
+    .returning({ url: generationsTable.videoUrl });
 }
 
 export async function getGenerationById(id: string, userGoogleId: string) {
@@ -142,8 +121,8 @@ export async function getAllGenerationsByConfigId(
       id: generationsTable.id,
       createdAt: generationsTable.createdAt,
       speechUrl: generationsTable.speechUrl,
-      captionsUrl: generationsTable.captions_url,
-      videoUrl: generationsTable.video_url,
+      captionsUrl: generationsTable.captionsUrl,
+      videoUrl: generationsTable.videoUrl,
       images: generationsTable.images,
       configId: generationsTable.configId,
       scriptId: generationsTable.scriptId,
@@ -237,6 +216,6 @@ export async function updateGenerationStatus(
 ) {
   await db
     .update(generationsTable)
-    .set({ status, error, updatedAt: new Date().toISOString() })
+    .set({ status, error })
     .where(eq(generationsTable.id, id));
 }
