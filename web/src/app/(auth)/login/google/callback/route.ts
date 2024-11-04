@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
   if (existingUser !== null) {
     const sessionToken = generateSessionToken();
-    const session = await createSession(sessionToken, existingUser.id);
+    const session = await createSession(sessionToken, existingUser.googleId);
     setSessionTokenCookie(sessionToken, session.expiresAt);
     return new Response(null, {
       status: 302,
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
   });
 
   const sessionToken = generateSessionToken();
-  const session = await createSession(sessionToken, user.id);
+  const session = await createSession(sessionToken, user.googleId);
   setSessionTokenCookie(sessionToken, session.expiresAt);
 
   return new Response(null, {
