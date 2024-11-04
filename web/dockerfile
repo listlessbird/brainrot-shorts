@@ -1,5 +1,6 @@
 FROM imbios/bun-node:latest-current-alpine AS base
 
+ARG NEXT_PUBLIC_BASE_URL=sparkles.listlessbird.dev
 
 FROM base AS deps
 WORKDIR /app
@@ -17,6 +18,8 @@ RUN bun run build
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+ENV NEXT_TELEMETRY_DISABLED 1
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static

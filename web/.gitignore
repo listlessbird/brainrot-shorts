@@ -43,3 +43,4 @@ scratch.ts
 
 secrets.ps1
 fly.toml
+.env.prod
