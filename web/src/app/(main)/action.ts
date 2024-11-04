@@ -17,7 +17,6 @@ import {
   getConfigByParams,
   getGenerationByConfigId,
   storeConfig,
-  storeGeneration,
   storeScript,
 } from "@/db/db-fns";
 import { makeSignedUrl } from "@/lib/r2";
@@ -26,6 +25,7 @@ import { getCurrentSession } from "@/lib/auth";
 import pQueue from "p-queue";
 import { delay } from "@/lib/utils";
 import { GenerationService } from "@/lib/generation-service";
+import { sendProgress } from "@/lib/send-progress";
 
 const {
   CF_ACCOUNT_ID,
@@ -37,7 +37,6 @@ const {
   GOOGLE_API_KEY,
   REPLICATE_API_KEY,
   TOGETHERAI_API_KEY,
-  NEXT_PUBLIC_BASE_URL,
 } = process.env;
 
 const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
@@ -64,29 +63,6 @@ const imageQueue = new pQueue({
 });
 
 const generateSessionId = () => `session-${crypto.randomUUID().slice(0, 4)}`;
-
-interface ProgressUpdate {
-  message: string;
-  status: "info" | "error" | "success";
-  timestamp: number;
-}
-
-async function sendProgress(
-  message: string,
-  status: ProgressUpdate["status"] = "info"
-) {
-  const update: ProgressUpdate = {
-    message,
-    status,
-    timestamp: Date.now(),
-  };
-
-  await fetch(`${NEXT_PUBLIC_BASE_URL}/api/progress/`, {
-    method: "POST",
-    body: JSON.stringify(update),
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
   const { user } = await getCurrentSession();

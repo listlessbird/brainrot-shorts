@@ -1,8 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  if (process.env.NODE_ENV === "development") {
-    return NextResponse.next();
+  // Special handling for SSE requests
+  if (request.url.includes("/api/progress")) {
+    if (request.method === "GET") {
+      const response = NextResponse.next();
+      response.headers.set("Content-Type", "text/event-stream");
+      response.headers.set("Cache-Control", "no-cache");
+      response.headers.set("Connection", "keep-alive");
+      response.headers.set(
+        "Access-Control-Allow-Origin",
+        request.headers.get("origin") || "*"
+      );
+      response.headers.set("Access-Control-Allow-Credentials", "true");
+      return response;
+    }
+
+    if (request.method === "POST") {
+      const response = NextResponse.next();
+      return response;
+    }
   }
 
   if (request.method === "GET") {
@@ -48,3 +65,13 @@ export async function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: [
+    // Match all request paths except for the ones starting with:
+    // - _next/static (static files)
+    // - _next/image (image optimization files)
+    // - favicon.ico (favicon file)
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
+};
