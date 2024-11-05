@@ -2,9 +2,12 @@ name: sparkles
 
 services:
   web:
-    image: ghcr.io/listlessbird/sparkles-web:latest
+    image: web-ui
     env_file:
       - .env
+    build:
+      context: ./web
+      dockerfile: dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -25,7 +28,9 @@ services:
       - CF_ID=${CF_ID}
 
   renderer:
-    image: ghcr.io/listlessbird/sparkles-renderer:latest
+    image: ai-short-gen-renderer
+    build: 
+      context: ./renderer
     ports:
       - "3001:3001"
 
