@@ -65,13 +65,13 @@ jobs:
       - name: Generate artifact attestation for renderer
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}-renderer
           subject-digest: ${{ steps.push-renderer.outputs.digest }}
           push-to-registry: true
 
       - name: Generate artifact attestation for web-app
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}-web
           subject-digest: ${{ steps.push-web.outputs.digest }}
           push-to-registry: true
