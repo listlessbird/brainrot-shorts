@@ -3,24 +3,29 @@
   "module": "src/index.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.1.13",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1"
   },
   "scripts": {
-    "dev": "bun src/index.ts",
-    "dev:w": "bun --watch src/index.ts"
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --target bun --outdir ./dist",
+    "start": "NODE_ENV=production bun dist/index.js"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@elysiajs/stream": "^1.1.0",
     "@remotion/bundler": "4.0.221",
     "@remotion/cli": "4.0.221",
     "@remotion/google-fonts": "^4.0.221",
     "@remotion/renderer": "^4.0.221",
     "@remotion/tailwind": "4.0.221",
     "@remotion/zod-types": "4.0.221",
+    "elysia": "^1.1.24",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "remotion": "4.0.221",
