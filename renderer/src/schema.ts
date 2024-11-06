@@ -1,27 +1,27 @@
-import { z } from "zod";
-
-export const CaptionSchema = z.object({
-  text: z.string(),
-  start: z.number(),
-  end: z.number(),
-  confidence: z.number(),
-  speaker: z.string().nullable(),
+// import { t } from "tod";
+import { t } from "elysia";
+export const CaptionSchema = t.Object({
+  text: t.String(),
+  start: t.Number(),
+  end: t.Number(),
+  confidence: t.Number(),
+  speaker: t.Optional(t.String()),
 });
 
-export const GeneratedAssetSchema = z.object({
-  id: z.string(),
-  createdAt: z.string(),
-  topic: z.string(),
-  duration: z.number(),
-  style: z.string(),
-  script: z.array(
-    z.object({
-      textContent: z.string(),
-      imagePrompt: z.string(),
+export const GeneratedAssetSchema = t.Object({
+  id: t.String(),
+  createdAt: t.String(),
+  topic: t.String(),
+  duration: t.Number(),
+  style: t.String(),
+  script: t.Array(
+    t.Object({
+      textContent: t.String(),
+      imagePrompt: t.String(),
     })
   ),
-  images: z.array(z.string()),
-  speechUrl: z.string(),
-  captionsUrl: z.string(),
-  configId: z.string(),
+  images: t.Array(t.String()),
+  speechUrl: t.String(),
+  captionsUrl: t.String(),
+  configId: t.String(),
 });
