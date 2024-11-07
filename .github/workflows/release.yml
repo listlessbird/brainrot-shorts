@@ -3,8 +3,8 @@ name: Build and Publish Docker Images
 on:
   push:
     branches: ["release"]
-  pull_request:
-    branches: ["release"]
+  # pull_request:
+  #   branches: ["release"]
 
 env:
   REGISTRY: ghcr.io
