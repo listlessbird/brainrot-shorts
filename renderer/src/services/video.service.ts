@@ -34,6 +34,11 @@ export class VideoService {
         progressCallback
       );
 
+      await progressCallback({
+        progress: 100,
+        stage: "COMPLETE",
+      });
+
       logger.info(
         { configId: data.configId, outputPath },
         "Video generation completed"
@@ -80,7 +85,10 @@ export class VideoService {
         entryPoint: path.join(process.cwd(), "./src/remotion/index.ts"),
         onProgress: async (progress: number) => {
           logger.debug({ progress }, "Bundling progress");
-          await progressCallback(progress / 2);
+          await progressCallback({
+            progress: progress / 2,
+            stage: "STARTING",
+          });
         },
       });
     } catch (error) {
@@ -133,7 +141,7 @@ export class VideoService {
       await renderMedia({
         composition,
         serveUrl: bundled,
-        codec: "h264",
+        codec: "h265",
         outputLocation,
         inputProps,
         timeoutInMilliseconds: 30 * 1000,
@@ -157,7 +165,20 @@ export class VideoService {
             "Rendering progress"
           );
 
-          await progressCallback(50 + progress * 50);
+          const stage = stitchStage === "encoding" ? "RENDERING" : "ENCODING";
+
+          await progressCallback({
+            progress: 50 + progress * 50,
+            stage,
+            details: {
+              renderedFrames,
+              encodedFrames,
+              // @ts-ignore
+              renderedDoneIn,
+              // @ts-ignore
+              encodedDoneIn,
+            },
+          });
         },
       });
 

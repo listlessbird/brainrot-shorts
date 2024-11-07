@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { startGeneration } from "@/app/(history)/history/(item)/[id]/action";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -15,6 +15,19 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, AlertCircle, CheckCircle2, RefreshCcw } from "lucide-react";
 import { GeneratedAssetType } from "@/types";
 
+type ProgressStage = "STARTING" | "RENDERING" | "ENCODING" | "COMPLETE";
+
+type ProgressData = {
+  progress: number;
+  stage: ProgressStage;
+  details?: {
+    renderedFrames: number;
+    encodedFrames?: number;
+    renderedDoneIn?: number;
+    encodedDoneIn?: number;
+  };
+};
+
 interface GenerationError {
   error: string;
   details?: string;
@@ -22,46 +35,52 @@ interface GenerationError {
 }
 
 const statusMessages = {
-  starting: "Preparing to start video generation...",
+  STARTING: "Preparing to start video generation...",
+  RENDERING: (frames: number) =>
+    `Rendering video... (${frames} frames rendered)`,
+  ENCODING: (frames: number) => `Encoding video... (${frames} frames encoded)`,
+  COMPLETE: "Video generation completed!",
   retrying: (count: number) => `Attempt ${count} of 3 to retry generation...`,
-  rendering: (frames: number) => `Rendering video... (${frames} frames)`,
-  encoding: (frames: number) => `Encoding video... (${frames} frames)`,
-  complete: "Video generation completed!",
-  processing: "Processing...",
   error: "An error occurred during generation.",
 };
 
 export function Generate({ asset }: { asset: GeneratedAssetType }) {
   const [isPending, startTransition] = useTransition();
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState<ProgressData>({
+    progress: 0,
+    stage: "STARTING",
+  });
   const [status, setStatus] = useState("");
   const [url, setUrl] = useState("");
   const [error, setError] = useState<GenerationError | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  function setStatusMessage(stage: string, details?: any) {
+  function setStatusMessage(data: ProgressData) {
+    const { stage, details } = data;
     switch (stage) {
       case "STARTING":
-        setStatus(statusMessages.starting);
+        setStatus(statusMessages.STARTING);
         break;
       case "RENDERING":
-        setStatus(statusMessages.rendering(details?.renderedFrames));
+        setStatus(statusMessages.RENDERING(details?.renderedFrames || 0));
         break;
       case "ENCODING":
-        setStatus(statusMessages.encoding(details?.encodedFrames));
+        setStatus(statusMessages.ENCODING(details?.encodedFrames || 0));
         break;
       case "COMPLETE":
-        setStatus(statusMessages.complete);
-        setUrl(details?.signedUrl || "");
+        setStatus(statusMessages.COMPLETE);
         break;
-      default:
-        setStatus(statusMessages.processing);
     }
   }
 
   async function handleGeneration(isRetry = false) {
-    if (!isRetry) resetState();
-    else {
+    if (!isRetry) {
+      setProgress({ progress: 0, stage: "STARTING" });
+      setStatus(statusMessages.STARTING);
+      setError(null);
+      setUrl("");
+      setRetryCount(0);
+    } else {
       setRetryCount((prev) => prev + 1);
       setStatus(statusMessages.retrying(retryCount + 1));
       setError(null);
@@ -77,9 +96,33 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
           if (done) break;
 
           const data = JSON.parse(new TextDecoder().decode(value));
-          console.table({ data });
-          setProgress(data.progress ?? progress);
-          setStatusMessage(data.stage, data.details);
+
+          if (data.error) {
+            throw {
+              error: data.error,
+              details: data.details,
+              recoverable: data.recoverable,
+            };
+          }
+
+          if (data.signedUrl) {
+            setUrl(data.signedUrl);
+          }
+
+          setProgress((prev) => ({
+            progress: data.progress ?? prev.progress,
+            stage: data.stage ?? prev.stage,
+            details: {
+              ...prev.details,
+              ...data.details,
+            },
+          }));
+
+          setStatusMessage({
+            progress: data.progress,
+            stage: data.stage,
+            details: data.details,
+          });
         }
       } catch (err) {
         const errorDetails = err as GenerationError;
@@ -93,15 +136,7 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
     });
   }
 
-  function resetState() {
-    setProgress(0);
-    setStatus(statusMessages.starting);
-    setError(null);
-    setUrl("");
-    setRetryCount(0);
-  }
-
-  const canRetry = error?.recoverable || retryCount < 3;
+  const canRetry = error?.recoverable && retryCount < 3;
   const isRetrying = error?.recoverable && retryCount < 3;
 
   return (
@@ -111,7 +146,7 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {isPending || progress > 0 ? (
+          {isPending || progress.progress > 0 ? (
             <p>
               Video generation is in progress. Please be patient, as this may
               take several minutes.
@@ -122,7 +157,7 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
 
           <Button
             onClick={() => handleGeneration(false)}
-            disabled={isPending || progress === 100 || isRetrying}
+            disabled={isPending || progress.progress === 100 || isRetrying}
             className="w-full"
           >
             {isPending ? (
@@ -135,13 +170,13 @@ export function Generate({ asset }: { asset: GeneratedAssetType }) {
             )}
           </Button>
 
-          {(status || progress > 0) && (
+          {(status || progress.progress > 0) && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span>{status}</span>
-                <span>{progress}%</span>
+                <span>{progress.progress}%</span>
               </div>
-              <Progress value={progress} className="w-full" />
+              <Progress value={progress.progress} className="w-full" />
             </div>
           )}
 

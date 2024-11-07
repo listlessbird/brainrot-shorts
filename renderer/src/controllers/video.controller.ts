@@ -4,6 +4,7 @@ import { logger } from "../logger";
 import { GeneratedAssetSchema } from "../schema";
 import { AppError, handleError } from "../utils/error";
 import Stream from "@elysiajs/stream";
+import type { ProgressData } from "../types";
 
 export function setupVideoRoutes(app: Elysia) {
   const videoService = new VideoService();
@@ -21,32 +22,33 @@ export function setupVideoRoutes(app: Elysia) {
           return `data: ${JSON.stringify(data)}\n\n`;
         }
 
-        const progressQueue: number[] = [];
+        const progressQueue: ProgressData[] = [];
         let done = false;
         let error: Error | null = null;
 
-        function getNextProgress() {
+        function getNextProgress(): Promise<ProgressData | null> {
           if (progressQueue.length > 0) {
             return Promise.resolve(progressQueue.shift()!);
           }
 
-          return new Promise<number>((resolve) => {
+          return new Promise<ProgressData | null>((resolve) => {
             function checkQueue() {
               if (progressQueue.length > 0) {
                 resolve(progressQueue.shift()!);
               } else if (done) {
-                resolve(-1);
+                resolve(null);
               } else {
                 setTimeout(checkQueue, 1000);
               }
             }
+
             checkQueue();
           });
         }
 
         videoService
-          .renderVideo(body, async (progress) => {
-            progressQueue.push(progress);
+          .renderVideo(body, async (progressData) => {
+            progressQueue.push(progressData);
           })
           .then(() => {
             done = true;
@@ -58,11 +60,18 @@ export function setupVideoRoutes(app: Elysia) {
 
         try {
           while (!done) {
-            const progress = await getNextProgress();
+            const progressData = await getNextProgress();
 
-            if (progress >= 0) {
+            if (progressData && progressData.details) {
               yield formatSSE({
-                progress: Math.round(progress),
+                progress: Math.round(progressData.progress),
+                stage: progressData.stage,
+                details: progressData.details,
+              });
+            } else if (progressData) {
+              yield formatSSE({
+                progress: Math.round(progressData.progress),
+                stage: progressData.stage,
               });
             }
           }
