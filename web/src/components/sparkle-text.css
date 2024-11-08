@@ -1,0 +1,21 @@
+@keyframes gradient {
+  0% {
+    color: hsl(8, 58%, 54%);
+  }
+  25% {
+    color: hsl(8, 58%, 64%);
+  }
+  50% {
+    color: hsl(8, 68%, 44%);
+  }
+  75% {
+    color: hsl(8, 48%, 54%);
+  }
+  100% {
+    color: hsl(8, 58%, 54%);
+  }
+}
+
+.animate-gradient {
+  animation: gradient 4s ease-in-out infinite;
+}

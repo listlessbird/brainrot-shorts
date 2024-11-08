@@ -55,17 +55,19 @@ export function Attr() {
     <TooltipProvider>
       <Tooltip open={isOpen}>
         <motion.div
-          className="bg-gradient-to-t from-background/80 to-transparent backdrop-blur-sm"
+          className="p-4 bg-gradient-to-t from-background/80 to-transparent backdrop-blur-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <motion.div
-            className="max-w-md mx-auto flex items-center justify-center space-x-1 text-foreground"
+            className="max-w-md mx-auto flex items-center justify-center lg:space-x-3 text-foreground"
             onMouseEnter={handleOpen}
             onMouseLeave={handleClose}
           >
-            <span className="text-sm font-medium">built with</span>
+            <span className="text-sm font-medium hidden lg:inline">
+              built with
+            </span>
             <motion.div
               animate={{
                 rotateY: [0, 360],
@@ -75,7 +77,7 @@ export function Attr() {
               <Heart className="size-5 text-red-500" fill="currentColor" />
             </motion.div>
             <motion.span
-              className="text-sm font-medium"
+              className="text-sm font-medium hidden lg:inline"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}

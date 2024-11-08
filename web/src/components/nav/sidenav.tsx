@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { SideNavItems, SideNavItem } from "@/components/nav/constants";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
-import { Attr } from "@/components/attr";
+import { Attr } from "@/components/nav/attr-nav";
 export function SideNav() {
   return (
     <div

@@ -2,17 +2,30 @@
 import Image from "next/image";
 import Icon from "@/app/icon.png";
 import Link from "next/link";
-export function Logo() {
+import { Component, ComponentProps } from "react";
+import { cn } from "@/lib/utils";
+export function Logo({
+  width = 24,
+  height = 24,
+  ...props
+}: {
+  width?: number;
+  height?: number;
+} & ComponentProps<"div">) {
   return (
     <div
-      className="p-2 rounded-full flex items-center justify-center size-10  relative"
+      className={cn(
+        "p-2 rounded-full flex items-center justify-center size-10  relative",
+        props.className
+      )}
+      {...props}
       //   style={{ backgroundColor: "rgb(185, 71, 52)", objectFit: "contain" }}
     >
       <Image
         src={Icon}
         alt="Icon"
-        width={24}
-        height={24}
+        width={width}
+        height={height}
         className="z-[1000]"
         style={{
           filter:

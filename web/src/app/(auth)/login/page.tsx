@@ -1,8 +1,11 @@
+import { Attr } from "@/components/attr";
+import { SparklesText } from "@/components/sparkle-text";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -10,18 +13,26 @@ import Link from "next/link";
 
 export default async function Page() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4 sm:p-8">
-      <Card className="w-full max-w-[350px] sm:w-[350px] shadow-lg">
-        <CardHeader className="text-center space-y-1">
-          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-          <CardDescription className="text-sm sm:text-base">
-            Sign in to your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <GoogleSignInButton />
-        </CardContent>
-      </Card>
+    <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-background to-orange-200 grid ">
+      <div className="flex flex-col items-center justify-center place-content-center">
+        <SparklesText />
+        <Card className="w-full max-w-[350px] sm:w-[350px] shadow-lg">
+          <CardHeader className="text-center space-y-1">
+            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              Sign in to your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <GoogleSignInButton />
+          </CardContent>
+          <CardFooter>
+            <div className="w-full [&>*]:bg-none">
+              <Attr />
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
