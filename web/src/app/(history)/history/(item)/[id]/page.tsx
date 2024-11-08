@@ -69,11 +69,17 @@ const getGeneration = cache(async (id: string, userGoogleId: string) => {
   };
 });
 
-export default async function Generation({
-  params: { id },
-}: {
-  params: { id: string };
-}) {
+export default async function Generation(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
+
+  const {
+    id
+  } = params;
+
   const { user } = await validateRequest();
   const gen = await getGeneration(id, user.googleId);
 
