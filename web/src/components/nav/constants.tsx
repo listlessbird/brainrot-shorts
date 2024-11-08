@@ -12,7 +12,7 @@ export const SideNavItems: SideNavItem[] = [
     icon: <HomeIcon />,
   },
   {
-    title: "generations",
+    title: "Generations",
     path: "/history",
     icon: <VideoIcon />,
   },

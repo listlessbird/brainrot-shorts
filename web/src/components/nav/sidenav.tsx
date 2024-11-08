@@ -6,10 +6,11 @@ import { usePathname } from "next/navigation";
 import { SideNavItems, SideNavItem } from "@/components/nav/constants";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
+import { Attr } from "@/components/attr";
 export function SideNav() {
   return (
     <div
-      className="md:w-16 lg:w-60 bg-background h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex shadow-md"
+      className="md:w-16 lg:w-60 bg-background h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex shadow-md md:flex-col"
       sp-layout="sidebar"
     >
       <div className="flex flex-col space-y-6 w-full">
@@ -26,6 +27,10 @@ export function SideNav() {
           })}
         </div>
       </div>
+
+      <div className="mt-auto">
+        <Attr />
+      </div>
     </div>
   );
 }
@@ -38,7 +43,7 @@ const MenuItem = ({ item }: { item: SideNavItem }) => {
       <Link
         href={item.path}
         className={cn(
-          `flex flex-row space-x-4 items-center p-2 rounded-lg hover:bg-accent`,
+          `flex flex-row space-x-4 items-center p-2 rounded-lg hover:bg-accent capitalize`,
           item.path === pathname && "bg-zinc-100"
         )}
         title={item.title}

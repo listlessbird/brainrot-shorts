@@ -134,7 +134,11 @@ const MenuItem = ({
   children?: ReactNode;
 } & ComponentProps<typeof motion.li>) => {
   return (
-    <motion.li variants={MenuItemVariants} className={className} {...props}>
+    <motion.li
+      variants={MenuItemVariants}
+      className={cn("capitalize", className)}
+      {...props}
+    >
       {children}
     </motion.li>
   );
