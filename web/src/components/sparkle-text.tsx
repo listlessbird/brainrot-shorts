@@ -118,39 +118,48 @@ export function SparklesText() {
   );
 
   return (
-    <motion.div
-      layout
-      className="flex items-center justify-center p-4"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <motion.div variants={logoVariants} whileHover="hover">
-        <Logo width={60} height={60} className="size-10" />
+    <div className="flex flex-col items-center justify-center">
+      <motion.div
+        layout
+        className="flex items-center justify-center p-4"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={logoVariants} whileHover="hover">
+          <Logo width={60} height={60} className="size-10" />
+        </motion.div>
+        <motion.h1 className="text-4xl sm:text-6xl font-bold tracking-wide ml-4">
+          <AnimatePresence>
+            {letters.map((letter) => (
+              <motion.span
+                key={letter.id}
+                custom={letter}
+                variants={letterVariants}
+                whileHover="hover"
+                className="inline-block transition-transform duration-300 ease-in-out hover:scale-110 animate-gradient relative cursor-default"
+                style={{
+                  animationDelay: `${letter.delay}s`,
+                }}
+              >
+                <Sparkle style={{ top: -8, left: "50%" }} />
+                <Sparkle style={{ bottom: -8, left: "50%" }} />
+                <Sparkle style={{ left: -8, top: "50%" }} />
+                <Sparkle style={{ right: -8, top: "50%" }} />
+                {letter.char}
+              </motion.span>
+            ))}
+          </AnimatePresence>
+        </motion.h1>
       </motion.div>
-
-      <motion.h1 className="text-4xl sm:text-6xl font-bold tracking-wide ml-4">
-        <AnimatePresence>
-          {letters.map((letter) => (
-            <motion.span
-              key={letter.id}
-              custom={letter}
-              variants={letterVariants}
-              whileHover="hover"
-              className="inline-block transition-transform duration-300 ease-in-out hover:scale-110 animate-gradient relative cursor-default"
-              style={{
-                animationDelay: `${letter.delay}s`,
-              }}
-            >
-              <Sparkle style={{ top: -8, left: "50%" }} />
-              <Sparkle style={{ bottom: -8, left: "50%" }} />
-              <Sparkle style={{ left: -8, top: "50%" }} />
-              <Sparkle style={{ right: -8, top: "50%" }} />
-              {letter.char}
-            </motion.span>
-          ))}
-        </AnimatePresence>
-      </motion.h1>
-    </motion.div>
+      <motion.p
+        className="text-xl text-brand font-medium"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.4 }}
+      >
+        ai short video generator
+      </motion.p>
+    </div>
   );
 }
