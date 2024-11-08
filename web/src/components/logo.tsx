@@ -5,7 +5,7 @@ import Link from "next/link";
 export function Logo() {
   return (
     <div
-      className="p-2 rounded-full flex items-center justify-center size-10 bg-zinc-300 relative"
+      className="p-2 rounded-full flex items-center justify-center size-10  relative"
       //   style={{ backgroundColor: "rgb(185, 71, 52)", objectFit: "contain" }}
     >
       <Image
