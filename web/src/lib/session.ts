@@ -6,7 +6,7 @@ import {
 import { sha256 } from "@oslojs/crypto/sha2";
 import { sessionTable, userTable, type Session, type User } from "@/db/schema";
 import { db } from "@/db/db";
-import { cookies } from "next/headers";
+import { cookies, type UnsafeUnwrappedCookies } from "next/headers";
 export function generateSessionToken(): string {
   const bytes = new Uint8Array(20);
   crypto.getRandomValues(bytes);
@@ -71,7 +71,7 @@ export async function invalidateSession(sessionId: string): Promise<void> {
 }
 
 export function setSessionTokenCookie(token: string, expiresAt: Date) {
-  cookies().set("session", token, {
+  (cookies() as unknown as UnsafeUnwrappedCookies).set("session", token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -81,7 +81,7 @@ export function setSessionTokenCookie(token: string, expiresAt: Date) {
 }
 
 export function deleteSessionTokenCookie() {
-  cookies().set("session", "", {
+  (cookies() as unknown as UnsafeUnwrappedCookies).set("session", "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
