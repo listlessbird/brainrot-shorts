@@ -70,8 +70,8 @@ export async function invalidateSession(sessionId: string): Promise<void> {
   await db.delete(sessionTable).where(eq(sessionTable.id, sessionId));
 }
 
-export function setSessionTokenCookie(token: string, expiresAt: Date) {
-  (cookies() as unknown as UnsafeUnwrappedCookies).set("session", token, {
+export async function setSessionTokenCookie(token: string, expiresAt: Date) {
+  await (cookies() as unknown as UnsafeUnwrappedCookies).set("session", token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -80,8 +80,8 @@ export function setSessionTokenCookie(token: string, expiresAt: Date) {
   });
 }
 
-export function deleteSessionTokenCookie() {
-  (cookies() as unknown as UnsafeUnwrappedCookies).set("session", "", {
+export async function deleteSessionTokenCookie() {
+  await (cookies() as unknown as UnsafeUnwrappedCookies).set("session", "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

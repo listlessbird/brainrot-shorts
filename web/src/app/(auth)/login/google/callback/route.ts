@@ -14,8 +14,10 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  const storedState = (await cookies()).get("google_oauth_state")?.value ?? null;
-  const codeVerifier = (await cookies()).get("google_code_verifier")?.value ?? null;
+  const storedState =
+    (await cookies()).get("google_oauth_state")?.value ?? null;
+  const codeVerifier =
+    (await cookies()).get("google_code_verifier")?.value ?? null;
 
   if (
     code === null ||
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
   if (existingUser !== null) {
     const sessionToken = generateSessionToken();
     const session = await createSession(sessionToken, existingUser.googleId);
-    setSessionTokenCookie(sessionToken, session.expiresAt);
+    await setSessionTokenCookie(sessionToken, session.expiresAt);
     return new Response(null, {
       status: 302,
       headers: {
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
 
   const sessionToken = generateSessionToken();
   const session = await createSession(sessionToken, user.googleId);
-  setSessionTokenCookie(sessionToken, session.expiresAt);
+  await setSessionTokenCookie(sessionToken, session.expiresAt);
 
   return new Response(null, {
     status: 302,
