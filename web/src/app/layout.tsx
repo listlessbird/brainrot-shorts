@@ -5,8 +5,15 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sparkles",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
+  title: {
+    template: "%s | sparkles",
+    default: "sparkles",
+  },
   description: "generate shortform videos with ai",
+  openGraph: {
+    images: "/og-image.png",
+  },
 };
 
 export default function RootLayout({
@@ -20,5 +27,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-// export const runtime = "nodejs";

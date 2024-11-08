@@ -2,6 +2,19 @@ import { History } from "@/app/(history)/history/history";
 import { Suspense } from "react";
 import Loading from "@/app/(history)/history/shell";
 import { validateRequest } from "@/lib/auth";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { user } = await validateRequest();
+
+  if (!user) return {};
+
+  return {
+    title: `${user.username} 's generations`,
+    description: `${user.username}'s generations in sparkles`,
+  };
+}
+
 export default async function Home() {
   const { user } = await validateRequest();
 
