@@ -3,9 +3,11 @@ import { SideNavItem, SideNavItems } from "@/components/nav/constants";
 import { cn } from "@/lib/utils";
 import { motion, useCycle, Variants } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { ReactNode, useRef } from "react";
+import { ComponentProps, ReactNode, useRef } from "react";
 import { useDimensions } from "@/hooks/use-dimensions";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { logOut } from "@/app/(auth)/action";
 
 const sidebarVariants: Variants = {
   open: (height: number = 1000) => ({
@@ -100,6 +102,23 @@ export function HeaderMobile() {
             </div>
           );
         })}
+        <MenuItem className="flex w-full text-2xl my-3 cursor-pointer">
+          <Link
+            href={"https://github.com/listlessbird/sparkles/"}
+            target="_blank"
+          >
+            github
+          </Link>
+        </MenuItem>
+
+        <MenuItem
+          className="flex w-full text-2xl my-3 cursor-pointer"
+          onClick={async () => {
+            await logOut();
+          }}
+        >
+          logout
+        </MenuItem>
       </motion.ul>
       <MenuToggle toggle={toggleOpen} />
     </motion.nav>
@@ -109,12 +128,13 @@ export function HeaderMobile() {
 const MenuItem = ({
   className,
   children,
+  ...props
 }: {
   className?: string;
   children?: ReactNode;
-}) => {
+} & ComponentProps<typeof motion.li>) => {
   return (
-    <motion.li variants={MenuItemVariants} className={className}>
+    <motion.li variants={MenuItemVariants} className={className} {...props}>
       {children}
     </motion.li>
   );
