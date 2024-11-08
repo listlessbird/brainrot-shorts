@@ -12,7 +12,7 @@ export async function logOut() {
   }
 
   await invalidateSession(session.id);
-  deleteSessionTokenCookie();
+  await deleteSessionTokenCookie();
 
   return redirect("/login");
 }
