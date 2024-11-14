@@ -1,15 +1,18 @@
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
+import { cron, Patterns } from "@elysiajs/cron";
 import { VideoService } from "../services/video.service";
 import { logger } from "../logger";
 import { GeneratedAssetSchema } from "../schema";
-import { AppError, handleError } from "../utils/error";
-import Stream from "@elysiajs/stream";
+import { handleError } from "../utils/error";
 import type { ProgressData } from "../types";
 import { ProgressService } from "../services/progress.service";
 import { ctx } from "..";
+import { VideoStatusService } from "../services/video-status.service";
+import { MAX_AGE } from "../constants";
 export function setupVideoRoutes(app: Elysia) {
   const videoService = new VideoService(ctx.bundled);
   const progressService = new ProgressService();
+  const statusService = new VideoStatusService();
 
   return app
     .post(
@@ -138,7 +141,16 @@ export function setupVideoRoutes(app: Elysia) {
           stage: "RENDERING",
         })}\n\n`;
       }
-    });
+    })
+    .use(
+      cron({
+        name: "Cleanup old videos",
+        pattern: Patterns.everyMinutes(15),
+        run: async () => {
+          await statusService.cleanupOldVideos(MAX_AGE);
+        },
+      })
+    );
 }
 
 function isErrorProgress(

@@ -1,4 +1,3 @@
-import { bundle } from "@remotion/bundler";
 import { getCompositions, renderMedia } from "@remotion/renderer";
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
@@ -7,26 +6,48 @@ import { logger } from "../logger";
 import { AppError, handleError } from "../utils/error";
 import type { BunFile } from "bun";
 import { ProgressService } from "./progress.service";
+import { VideoStatusService } from "./video-status.service";
 
 export class VideoService {
   private readonly outputDir: string;
   private readonly progressService: ProgressService;
+  private readonly statusService: VideoStatusService;
 
   private readonly bundled: string;
   constructor(bundled: string) {
     this.outputDir = path.join(process.cwd(), "output");
     this.progressService = new ProgressService();
+    this.statusService = new VideoStatusService();
     this.bundled = bundled;
   }
 
   async renderVideo(data: VideoGenerationRequest): Promise<string> {
     logger.info({ configId: data.configId }, "Starting video generation");
 
+    const existingStatus = await this.statusService.getVideoStatus(
+      data.configId
+    );
+
+    if (existingStatus?.status === "COMPLETED" && existingStatus.path) {
+      const file = Bun.file(existingStatus.path);
+      if (await file.exists()) {
+        logger.info(
+          { configId: data.configId },
+          "Video already exitst, skipping rendering"
+        );
+
+        return existingStatus.path;
+      }
+    }
+
+    await this.statusService.setVideoStatus({
+      configId: data.configId,
+      status: "PENDING",
+    });
+
     try {
       const captions = await this.fetchCaptions(data.captionsUrl);
       const inputProps = { ...data, captions };
-      // TODO: cache this if possible
-      // const bundled = await this.bundleProject(data.configId);
       const composition = await this.getVideoComposition(
         this.bundled,
         inputProps
@@ -37,6 +58,13 @@ export class VideoService {
         inputProps,
         data.configId
       );
+
+      await this.statusService.setVideoStatus({
+        configId: data.configId,
+        status: "COMPLETED",
+        path: outputPath,
+        // lastAccessed: Date.now(),
+      });
 
       await this.progressService.publishProgress(data.configId, {
         progress: 100,
@@ -50,6 +78,13 @@ export class VideoService {
       return outputPath;
     } catch (error) {
       const appError = handleError(error);
+
+      await this.statusService.setVideoStatus({
+        configId: data.configId,
+        status: "FAILED",
+        error: appError.message,
+      });
+
       logger.error(
         { error: appError, configId: data.configId },
         "Video generation failed"
@@ -177,10 +212,19 @@ export class VideoService {
 
   async getVideoFile(configId: string): Promise<BunFile | null> {
     try {
-      const videoPath = path.join(this.outputDir, `${configId}.mp4`);
-      const file = Bun.file(videoPath);
+      // const videoPath = path.join(this.outputDir, `${configId}.mp4`);
+      // const file = Bun.file(videoPath);
+
+      const status = await this.statusService.getVideoStatus(configId);
+
+      if (!status?.path) {
+        return null;
+      }
+
+      const file = Bun.file(status.path);
 
       if (await file.exists()) {
+        await this.statusService.updateLastAccessed(configId);
         return file;
       }
       return null;

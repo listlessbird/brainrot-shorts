@@ -47,3 +47,11 @@ export type ProgressData<T extends ProgressStage = ProgressStage> = {
   progress: number;
   stage: T;
 } & StageFields<T>;
+
+export type VideoStatus = {
+  configId: string;
+  status: "PENDING" | "COMPLETED" | "FAILED";
+  path?: string;
+  lastAccessed?: number;
+  error?: string;
+};
