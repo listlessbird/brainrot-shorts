@@ -1,6 +1,6 @@
 FROM imbios/bun-node:latest-current-alpine AS base
 
-ARG NEXT_PUBLIC_BASE_URL=sparkles.listlessbird.dev
+ARG NEXT_PUBLIC_BASE_URL=http://web:3000
 
 FROM base AS deps
 WORKDIR /app

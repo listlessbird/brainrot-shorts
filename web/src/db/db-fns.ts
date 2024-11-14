@@ -99,6 +99,7 @@ export async function getAllGenerations(userGoogleId: string) {
       configId: generationsTable.configId,
       topic: configTable.topic,
       duration: configTable.duration,
+      status: generationsTable.status,
     })
     .from(generationsTable)
     .leftJoin(configTable, eq(generationsTable.configId, configTable.configId))

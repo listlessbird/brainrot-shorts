@@ -7,6 +7,8 @@ export type GeneratedAssetType = Awaited<
   ReturnType<typeof getAllGenerationsByConfigId>
 >;
 
+export type GenerationPreview = Pick<Generation, "configId" | "status">;
+
 export interface GenerationState {
   id: string;
   script?: {
