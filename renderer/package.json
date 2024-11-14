@@ -24,6 +24,7 @@
     "@remotion/tailwind": "4.0.221",
     "@remotion/zod-types": "4.0.221",
     "elysia": "^1.1.24",
+    "ioredis": "^5.4.1",
     "pino": "^9.5.0",
     "pino-pretty": "^11.3.0",
     "react": "18.3.1",

@@ -12,15 +12,38 @@ export interface HealthCheckResponse {
   uptime: number;
 }
 
-export type ProgressStage = "STARTING" | "RENDERING" | "ENCODING" | "COMPLETE";
+export type ProgressStage =
+  | "STARTING"
+  | "RENDERING"
+  | "ENCODING"
+  | "COMPLETE"
+  | "ERROR";
 
-export type ProgressData = {
-  progress: number;
-  stage: ProgressStage;
-  details?: {
-    renderedFrames: number;
-    encodedFrames?: number;
-    renderedDoneIn?: number;
-    encodedDoneIn?: number;
-  };
+// export type ProgressData = {
+//   progress: number;
+//   stage: ProgressStage;
+//   details?: {
+//     renderedFrames: number;
+//     encodedFrames?: number;
+//     renderedDoneIn?: number;
+//     encodedDoneIn?: number;
+//   };
+// };
+
+type ProgressDetails = {
+  renderedFrames: number;
+  encodedFrames?: number;
+  renderedDoneIn?: number;
+  encodedDoneIn?: number;
 };
+
+type StageFields<T extends ProgressStage> = T extends "RENDERING" | "ENCODING"
+  ? { details: ProgressDetails }
+  : T extends "ERROR"
+  ? { error: string }
+  : {};
+
+export type ProgressData<T extends ProgressStage = ProgressStage> = {
+  progress: number;
+  stage: T;
+} & StageFields<T>;

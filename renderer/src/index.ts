@@ -4,14 +4,23 @@ import { CONFIG } from "./config";
 import { setupVideoRoutes } from "./controllers/video.controller";
 import { setupHealthRoutes } from "./controllers/health.controller";
 import { setupErrorHandling } from "./middleware/error.middleware";
+import { bundleProject } from "./bundle";
 
-const app = new Elysia()
-  .use(setupErrorHandling)
-  .use(setupHealthRoutes)
-  .use(setupVideoRoutes)
-  .listen(CONFIG.PORT);
+export const ctx = { bundled: "" };
 
-logger.info({ port: CONFIG.PORT, env: CONFIG.NODE_ENV }, "Server started");
+async function runBundle() {
+  ctx.bundled = await bundleProject();
+}
+
+runBundle().then(() => {
+  const app = new Elysia()
+    .use(setupErrorHandling)
+    .use(setupHealthRoutes)
+    .use(setupVideoRoutes)
+    .listen(CONFIG.PORT);
+
+  logger.info({ port: CONFIG.PORT, env: CONFIG.NODE_ENV }, "Server started");
+});
 
 process.on("uncaughtException", (error) => {
   logger.fatal({ error }, "Uncaught Exception");
@@ -25,4 +34,4 @@ process.on("unhandledRejection", (error) => {
   process.exit(1);
 });
 
-export type App = typeof app;
+// export type App = typeof app;

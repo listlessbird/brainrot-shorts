@@ -5,111 +5,87 @@ import { GeneratedAssetSchema } from "../schema";
 import { AppError, handleError } from "../utils/error";
 import Stream from "@elysiajs/stream";
 import type { ProgressData } from "../types";
-
+import { ProgressService } from "../services/progress.service";
+import { ctx } from "..";
 export function setupVideoRoutes(app: Elysia) {
-  const videoService = new VideoService();
+  const videoService = new VideoService(ctx.bundled);
+  const progressService = new ProgressService();
+
   return app
     .post(
       "/render/:configId",
-      async function* ({ body, set }) {
+      async function ({ body, params: { configId } }) {
+        videoService.renderVideo(body).catch((error) => {
+          logger.error({ error, configId }, "Render process failed");
+        });
+
+        return {
+          message: "Rendering started",
+          progressUrl: `/progress/${configId}`,
+        };
+      },
+      {
+        body: GeneratedAssetSchema,
+      }
+    )
+    .get(
+      "/progress/:configId",
+      async function* ({ params: { configId }, set }) {
         set.headers = {
           "content-type": "text/event-stream",
           "cache-control": "no-cache",
           connection: "keep-alive",
         };
 
-        function formatSSE(data: any) {
-          return `data: ${JSON.stringify(data)}\n\n`;
-        }
+        const formatSSE = (data: any) => `data: ${JSON.stringify(data)}\n\n`;
 
-        const progressQueue: ProgressData[] = [];
-        let done = false;
-        let error: Error | null = null;
+        yield `Sending sse from ${configId}`;
 
-        function getNextProgress(): Promise<ProgressData | null> {
-          if (progressQueue.length > 0) {
-            return Promise.resolve(progressQueue.shift()!);
-          }
-
-          return new Promise<ProgressData | null>((resolve) => {
-            function checkQueue() {
-              if (progressQueue.length > 0) {
-                resolve(progressQueue.shift()!);
-              } else if (done) {
-                resolve(null);
-              } else {
-                setTimeout(checkQueue, 1000);
-              }
-            }
-
-            checkQueue();
-          });
-        }
-
-        videoService
-          .renderVideo(body, async (progressData) => {
-            progressQueue.push(progressData);
-          })
-          .then(() => {
-            done = true;
-          })
-          .catch((err) => {
-            error = err;
-            done = true;
-          });
+        const progressStream =
+          progressService.subscribeToProgressUpdates(configId);
 
         try {
-          while (!done) {
-            const progressData = await getNextProgress();
+          for await (const progress of progressStream) {
+            // if (set.socket?.destroyed) {
+            //   logger.debug(
+            //     { configId },
+            //     "Client disconnected, stopping progress updates"
+            //   );
+            //   break;
+            // }
 
-            if (progressData && progressData.details) {
+            if (isErrorProgress(progress)) {
               yield formatSSE({
-                progress: Math.round(progressData.progress),
-                stage: progressData.stage,
-                details: progressData.details,
+                error: progress.error,
+                status: "failed",
               });
-            } else if (progressData) {
-              yield formatSSE({
-                progress: Math.round(progressData.progress),
-                stage: progressData.stage,
-              });
+              break;
             }
-          }
 
-          if (error) {
-            console.error(error);
-            const appError = handleError(error);
-            logger.error(
-              { error: appError },
-              `Rendering failed for session ${body.configId}`
-            );
+            if (progress.stage === "COMPLETE") {
+              yield formatSSE({
+                progress: 100,
+                status: "complete",
+                path: `/assets/${configId}`,
+              });
+              break;
+            }
 
-            yield formatSSE({
-              error: appError.message,
-              code: appError.code,
-              status: "failed",
-            });
-          } else {
-            yield formatSSE({
-              progress: 100,
-              status: "complete",
-              path: `/assets/${body.configId}`,
-            });
+            yield formatSSE(progress);
           }
         } catch (error) {
           const appError = handleError(error);
-          logger.error({ error: appError }, "Stream setup failed");
-          console.error(error);
+          logger.error(
+            { error: appError, configId },
+            "Error streaming progress"
+          );
           set.status = appError.statusCode;
-
           yield formatSSE({
             error: appError.message,
+            status: "failed",
             code: appError.code,
           });
         }
-      },
-      {
-        body: GeneratedAssetSchema,
       }
     )
     .get("/assets/:configId", async ({ params: { configId }, set }) => {
@@ -141,5 +117,32 @@ export function setupVideoRoutes(app: Elysia) {
           code: appError.code,
         };
       }
+    })
+    .get("/sse-test", async function* ({ set }) {
+      if (process.env.NODE_ENV !== "development") {
+        yield "Ok";
+        return;
+      }
+
+      set.headers = {
+        "content-type": "text/event-stream",
+        "cache-control": "no-cache",
+        connection: "keep-alive",
+      };
+
+      for (let i = 0; i < 1000000; i++) {
+        console.log("should be sending progress", i);
+
+        yield `data: ${JSON.stringify({
+          progress: i,
+          stage: "RENDERING",
+        })}\n\n`;
+      }
     });
+}
+
+function isErrorProgress(
+  progress: ProgressData
+): progress is ProgressData<"ERROR"> {
+  return progress.stage === "ERROR";
 }

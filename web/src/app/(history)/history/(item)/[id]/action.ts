@@ -110,16 +110,28 @@ export async function startGeneration({
           abortController?.abort();
         }, TIMEOUT_MS);
 
-        let lastProgress = 0;
-        let lastStage = "STARTING";
-
-        const response = await fetchWithRetry(
-          `${process.env.RENDERER_URL}/render/${asset.configId}/`,
+        // First, start the render process
+        const renderResponse = await fetchWithRetry(
+          `${process.env.RENDERER_URL}/render/${asset.configId}`,
           {
             method: "POST",
             body: JSON.stringify(asset),
             headers: {
               "Content-Type": "application/json",
+            },
+            signal: abortController.signal,
+          }
+        );
+
+        if (!renderResponse.ok) {
+          throw new GenerationError("Failed to start render process");
+        }
+
+        // Then connect to progress stream
+        const progressResponse = await fetchWithRetry(
+          `${process.env.RENDERER_URL}/progress/${asset.configId}`,
+          {
+            headers: {
               Accept: "text/event-stream",
               Connection: "keep-alive",
               "Cache-Control": "no-cache",
@@ -130,13 +142,15 @@ export async function startGeneration({
 
         clearTimeout(timeoutId);
 
-        if (!response.body) {
+        if (!progressResponse.body) {
           throw new GenerationError("No response body received from renderer");
         }
 
-        const reader = response.body.getReader();
+        const reader = progressResponse.body.getReader();
         let buffer = "";
         let lastEventTime = Date.now();
+        let lastProgress = 0;
+        let lastStage = "STARTING";
 
         const heartbeatInterval = setInterval(() => {
           const now = Date.now();
@@ -166,7 +180,6 @@ export async function startGeneration({
                 const data = JSON.parse(message.slice(6));
                 console.log(`[stream] Received message:`, data);
 
-                // Update last known progress
                 if (data.progress) lastProgress = data.progress;
                 if (data.stage) lastStage = data.stage;
 
@@ -174,7 +187,7 @@ export async function startGeneration({
                   throw new GenerationError(data.error);
                 }
 
-                if (data.path) {
+                if (data.status === "complete") {
                   sendStatus("Uploading to R2...", {
                     progress: Math.min(lastProgress + 5, 99),
                     stage: lastStage,
@@ -198,6 +211,7 @@ export async function startGeneration({
                     stage: "COMPLETE",
                   });
                   revalidatePath(`/history/${asset.configId}`);
+                  break;
                 } else {
                   controller.enqueue(
                     encoder.encode(JSON.stringify(data) + "\n")

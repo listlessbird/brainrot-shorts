@@ -6,35 +6,39 @@ import { type VideoGenerationRequest, type ProgressCallback } from "../types";
 import { logger } from "../logger";
 import { AppError, handleError } from "../utils/error";
 import type { BunFile } from "bun";
+import { ProgressService } from "./progress.service";
 
 export class VideoService {
   private readonly outputDir: string;
+  private readonly progressService: ProgressService;
 
-  constructor() {
+  private readonly bundled: string;
+  constructor(bundled: string) {
     this.outputDir = path.join(process.cwd(), "output");
+    this.progressService = new ProgressService();
+    this.bundled = bundled;
   }
 
-  async renderVideo(
-    data: VideoGenerationRequest,
-    progressCallback: ProgressCallback
-  ): Promise<string> {
+  async renderVideo(data: VideoGenerationRequest): Promise<string> {
     logger.info({ configId: data.configId }, "Starting video generation");
 
     try {
       const captions = await this.fetchCaptions(data.captionsUrl);
       const inputProps = { ...data, captions };
-
-      const bundled = await this.bundleProject(progressCallback);
-      const composition = await this.getVideoComposition(bundled, inputProps);
+      // TODO: cache this if possible
+      // const bundled = await this.bundleProject(data.configId);
+      const composition = await this.getVideoComposition(
+        this.bundled,
+        inputProps
+      );
       const outputPath = await this.renderToFile(
         composition,
-        bundled,
+        this.bundled,
         inputProps,
-        data.configId,
-        progressCallback
+        data.configId
       );
 
-      await progressCallback({
+      await this.progressService.publishProgress(data.configId, {
         progress: 100,
         stage: "COMPLETE",
       });
@@ -50,6 +54,7 @@ export class VideoService {
         { error: appError, configId: data.configId },
         "Video generation failed"
       );
+
       throw appError;
     }
   }
@@ -77,33 +82,10 @@ export class VideoService {
     }
   }
 
-  private async bundleProject(
-    progressCallback: ProgressCallback
-  ): Promise<string> {
-    try {
-      return await bundle({
-        entryPoint: path.join(process.cwd(), "./src/remotion/index.ts"),
-        onProgress: async (progress: number) => {
-          logger.debug({ progress }, "Bundling progress");
-          await progressCallback({
-            progress: progress / 2,
-            stage: "STARTING",
-          });
-        },
-      });
-    } catch (error) {
-      const appError = handleError(error);
-      logger.error({ error: appError }, "Bundling failed");
-      throw new AppError(
-        `Bundling failed: ${appError.message}`,
-        "BUNDLE_ERROR",
-        500
-      );
-    }
-  }
-
   private async getVideoComposition(bundled: string, inputProps: any) {
     try {
+      console.log("bundled", bundled);
+
       const comps = await getCompositions(bundled, { inputProps });
       const composition = comps.find((c) => c.id === "VideoGeneration");
 
@@ -130,8 +112,7 @@ export class VideoService {
     composition: any,
     bundled: string,
     inputProps: any,
-    configId: string,
-    progressCallback: ProgressCallback
+    configId: string
   ): Promise<string> {
     const outputLocation = path.join(this.outputDir, `${configId}.mp4`);
 
@@ -167,7 +148,7 @@ export class VideoService {
 
           const stage = stitchStage === "encoding" ? "RENDERING" : "ENCODING";
 
-          await progressCallback({
+          await this.progressService.publishProgress(configId, {
             progress: 50 + progress * 50,
             stage,
             details: {
