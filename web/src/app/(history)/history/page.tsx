@@ -24,9 +24,11 @@ export default async function Home() {
         Generations
       </h1>
       <div className="my-4 flex flex-wrap gap-2 md:gap-4 items-center justify-center">
-        <Suspense fallback={<Loading />}>
-          <HistoryWrap userGoogleId={user.googleId} />
-        </Suspense>
+        <div>
+          <Suspense fallback={<Loading />}>
+            <HistoryWrap userGoogleId={user.googleId} />
+          </Suspense>
+        </div>
       </div>
     </div>
   );

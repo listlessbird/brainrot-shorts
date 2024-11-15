@@ -1,4 +1,5 @@
 import { QueryProvider } from "@/app/query-provider";
+import { BackgroundPatterns } from "@/components/bg-pattern";
 import { Header } from "@/components/nav/header";
 import { HeaderMobile } from "@/components/nav/header-mobile";
 import { SideNav } from "@/components/nav/sidenav";
@@ -15,7 +16,8 @@ export default async function Layout({
   return (
     <QueryProvider>
       <SessionProvider value={{ user: user }}>
-        <div className="flex">
+        <div className="flex bg-gradient-to-br from-background to-secondary relative">
+          <BackgroundPatterns />
           <SideNav />
           <main className="min-h-screen flex-1">
             <Header />

@@ -1,4 +1,5 @@
 import { QueryProvider } from "@/app/query-provider";
+import { BackgroundPatterns } from "@/components/bg-pattern";
 import { Header } from "@/components/nav/header";
 import { HeaderMobile } from "@/components/nav/header-mobile";
 import { SideNav } from "@/components/nav/sidenav";
@@ -15,15 +16,18 @@ export default async function Layout({
   return (
     <QueryProvider>
       <SessionProvider value={{ user: user }}>
-        <div className="flex">
-          <SideNav />
-          <main className="min-h-screen flex-1">
-            <Header />
-            <HeaderMobile />
-            <div className="space-y-8 max-w-2xl mx-auto pt-5 px-3 lg:pl-16">
-              {children}
-            </div>
-          </main>
+        <div className="min-h-screen bg-gradient-to-br from-background to-secondary relative">
+          <BackgroundPatterns />
+          <div className="flex relative z-10">
+            <SideNav />
+            <main className="min-h-screen flex-1">
+              <Header />
+              <HeaderMobile />
+              <div className="space-y-8 max-w-full mx-auto pt-5 px-3 lg:pl-16">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
       </SessionProvider>
     </QueryProvider>

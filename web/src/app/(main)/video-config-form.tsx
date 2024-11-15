@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
-import { Clock, Loader2, Palette, Sparkles } from "lucide-react";
+import { Clock, Loader2, Palette, Sparkles, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   createVideConfigSchema,
   CreateVideoScriptConfig,
@@ -32,13 +44,32 @@ import { useVideoConfigMutation } from "@/app/(main)/use-video-config-mutation";
 import { ProgressDisplay } from "@/app/(main)/progress-display";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import DummyTest from "@/app/(main)/progress-test";
 
 const groups = [
-  { value: "fairy-tale", src: "/fairy-tale.jpg" },
-  { value: "anime", src: "/anime.jpg" },
-  { value: "manga", src: "/manga.jpg" },
-  { value: "pixel", src: "/pixel.jpg" },
+  {
+    value: "fairy-tale",
+    src: "/fairy-tale.jpg",
+    label: "Fairy Tale",
+    description: "Magical and enchanted storybook style",
+  },
+  {
+    value: "anime",
+    src: "/anime.jpg",
+    label: "Anime",
+    description: "Modern Japanese animation style",
+  },
+  {
+    value: "manga",
+    src: "/manga.jpg",
+    label: "Manga",
+    description: "Black and white comic art style",
+  },
+  {
+    value: "pixel",
+    src: "/pixel.jpg",
+    label: "Pixel Art",
+    description: "Retro gaming inspired pixel graphics",
+  },
 ];
 
 const defaultTopics = [
@@ -78,10 +109,8 @@ export function VideoConfigForm() {
   const onSubmit = async (values: CreateVideoScriptConfig) => {
     setValue(values);
     showStats(true);
-    console.log("Video Config:", values);
-
     mutate(values, {
-      onSuccess(data, variables, context) {
+      onSuccess(data) {
         console.table(data);
         showStats(false);
       },
@@ -89,125 +118,157 @@ export function VideoConfigForm() {
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="topic"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Topic
-              </FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter the topic for your video"
-                  className="resize-none"
-                  {...field}
-                  disabled={isPending}
-                />
-              </FormControl>
-              <FormDescription>
-                Describe the main subject of your video
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="duration"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center">
-                <Clock className="mr-2 h-4 w-4" />
-                Duration
-              </FormLabel>
-              <Select
-                onValueChange={(value) => field.onChange(parseInt(value))}
-                defaultValue={field.value.toString()}
-                disabled={isPending}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a duration" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {[30 * 1000, 60 * 1000].map((value) => (
-                    <SelectItem key={value} value={value.toString()}>
-                      {value / 1000} seconds
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>Choose the length of your video</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <Card className="w-full max-w-3xl mx-auto bg-card/40">
+      <CardHeader className="text-center bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
+        <CardTitle className="text-3xl font-bold tracking-tight">
+          Create Your Video
+        </CardTitle>
+        <CardDescription className="text-white/90">
+          Configure your video settings and let AI do the magic
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="topic"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center text-lg font-medium">
+                    <Sparkles className="mr-2 h-5 w-5 text-purple-500" />
+                    Topic
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 ml-2 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Describe what you want your video to be about</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter an exciting topic for your video..."
+                      className="resize-none min-h-[100px] text-lg"
+                      {...field}
+                      disabled={isPending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="style"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center">
-                <Palette className="mr-2 h-4 w-4" />
-                Style
-              </FormLabel>
-              <FormControl>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {groups.map(({ src, value }) => (
-                    <div
-                      key={value}
-                      className={cn(
-                        "relative aspect-square rounded-lg overflow-hidden cursor-pointer transition-all",
-                        field.value === value
-                          ? "ring-2 ring-primary ring-offset-0"
-                          : "hover:opacity-75"
-                      )}
-                      onClick={() => field.onChange(value)}
-                    >
-                      <Image
-                        src={src}
-                        alt={value}
-                        className="rounded-lg object-cover size-full"
-                        width={200}
-                        height={200}
-                      />
-                      {/* <div className="absolute inset-x-0 bottom-0 p-2 bg-black bg-opacity-50 text-white text-center text-sm font-medium">
-                        {value}
-                      </div> */}
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center text-lg font-medium">
+                    <Clock className="mr-2 h-5 w-5 text-purple-500" />
+                    Duration
+                  </FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    defaultValue={field.value.toString()}
+                    disabled={isPending}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="text-lg">
+                        <SelectValue placeholder="Select video length" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {[30 * 1000, 60 * 1000].map((value) => (
+                        <SelectItem
+                          key={value}
+                          value={value.toString()}
+                          className="text-lg"
+                        >
+                          {value / 1000} seconds
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="style"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center text-lg font-medium">
+                    <Palette className="mr-2 h-5 w-5 text-purple-500" />
+                    Style
+                  </FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {groups.map(({ src, value, label, description }) => (
+                        <div
+                          key={value}
+                          className={cn(
+                            "relative rounded-xl overflow-hidden cursor-pointer transition-all group",
+                            "hover:ring-2 hover:ring-purple-500 hover:ring-offset-2",
+                            field.value === value &&
+                              "ring-2 ring-purple-500 ring-offset-2"
+                          )}
+                          onClick={() => field.onChange(value)}
+                        >
+                          <Image
+                            src={src}
+                            alt={label}
+                            className="aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
+                            width={300}
+                            height={300}
+                          />
+                          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-white">
+                            <h3 className="font-medium text-lg">{label}</h3>
+                            <p className="text-sm text-white/80">
+                              {description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </FormControl>
-              <FormDescription>
-                Select a visual style for your video
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        {stats && <ProgressDisplay />}
-        {/* <DummyTest /> */}
-        <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Generate Video
-            </>
-          )}
-        </Button>
-      </form>
-    </Form>
+            {stats && (
+              <div className="rounded-lg border bg-card p-4">
+                <ProgressDisplay />
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full text-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Creating your video...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Generate Video
+                </>
+              )}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
