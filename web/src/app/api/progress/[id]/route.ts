@@ -1,4 +1,3 @@
-import { ProgressUpdate } from "@/lib/send-progress";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -21,9 +20,11 @@ const progressSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const generationId = (await params).id;
+  const reqParams = await params;
+
+  const generationId = reqParams.id;
 
   const responseStream = new TransformStream();
   const writer = responseStream.writable.getWriter();
