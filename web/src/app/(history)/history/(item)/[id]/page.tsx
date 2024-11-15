@@ -11,6 +11,7 @@ import { Calendar, Clock, Download, FileText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { GenerationViewer } from "@/app/(history)/_components/generation-viewer";
 
 const getGeneration = cache(async (id: string, userGoogleId: string) => {
   const generations = await getAllGenerationsByConfigId(id, userGoogleId);
@@ -69,23 +70,20 @@ const getGeneration = cache(async (id: string, userGoogleId: string) => {
   };
 });
 
-export default async function Generation(
-  props: {
-    params: Promise<{ id: string }>;
-  }
-) {
+export default async function Generation(props: {
+  params: Promise<{ id: string }>;
+}) {
   const params = await props.params;
 
-  const {
-    id
-  } = params;
+  const { id } = params;
 
   const { user } = await validateRequest();
-  const gen = await getGeneration(id, user.googleId);
+  // const gen = await getGeneration(id, user.googleId);
 
   return (
     <>
-      <GeneratedAsset asset={gen!} />
+      {/* <GeneratedAsset asset={gen!} /> */}
+      <GenerationViewer generationId={id} />
     </>
   );
 }

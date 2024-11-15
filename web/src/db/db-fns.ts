@@ -131,6 +131,7 @@ export async function getAllGenerationsByConfigId(
       duration: configTable.duration,
       style: configTable.style,
       script: generatedScriptsTable.script,
+      status: generationsTable.status,
     })
     .from(configTable)
     .leftJoin(

@@ -25,7 +25,7 @@ import { getCurrentSession } from "@/lib/auth";
 import pQueue from "p-queue";
 import { delay } from "@/lib/utils";
 import { GenerationService } from "@/lib/generation-service";
-import { sendProgress } from "@/lib/send-progress";
+import { Progress } from "@/lib/send-progress";
 
 const {
   CF_ACCOUNT_ID,
@@ -116,8 +116,8 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
 
     try {
       if (!state.script) {
-        await sendProgress("Generating script");
-        const { object } = await generateScriptWithAI(validated);
+        await Progress.phase(configId, "Script Generation");
+        const { object } = await generateScriptWithAI(validated, configId);
         const scriptId = await storeScript(
           object.scenes,
           configId,
@@ -130,12 +130,16 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
       }
 
       if (state.status === "script_ready" && !state.speech) {
-        await sendProgress("Synthesizing speech");
+        await Progress.phase(configId, "Synthesizing Speech");
         const fullText = state.script.scenes
           .map((s) => s.textContent)
           .join(" ");
 
-        const speech = await synthesizeSpeech(fullText, GOOGLE_API_KEY!);
+        const speech = await synthesizeSpeech(
+          fullText,
+          GOOGLE_API_KEY!,
+          configId
+        );
         const audioUploadResult = await uploadAudioToR2(
           speech.audioContent,
           configId
@@ -153,7 +157,7 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
         state.status === "speech_ready" &&
         (!state.images || state.images.length < state.script.scenes.length)
       ) {
-        await sendProgress("Generating images");
+        await Progress.phase(configId, "Generating Images");
 
         const missingImagePrompts = state.script.scenes
           .map((s) => s.imagePrompt)
@@ -166,9 +170,12 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
       }
 
       if (state.status === "images_ready" && state.speech && !state.captions) {
-        await sendProgress("Generating captions");
+        await Progress.phase(configId, "Caption Generation");
 
-        const captions = await generateCaptions(state.speech.signedUrl);
+        const captions = await generateCaptions(
+          state.speech.signedUrl,
+          sessionId
+        );
         if (captions.words) {
           const captionUpload = await uploadCaptionsToR2(
             captions.words,
@@ -183,20 +190,24 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
         await generationService.updateGenerationState(state.id, state);
       }
 
-      await sendProgress("Script generation completed successfully", "success");
+      await Progress.success(
+        configId,
+        "Script generation completed successfully"
+      );
     } catch (error) {
       state.status = "failed";
       state.error = error instanceof Error ? error.message : "Unknown error";
       await generationService.updateGenerationState(state.id, state);
+      await Progress.error(configId, `Generation failed: ${state.error}`);
       throw error;
     }
   } catch (error) {
     console.error("Error in createVideoScriptAction:", error);
-    await sendProgress(
+    await Progress.error(
+      configId!,
       `Error in video generation: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`,
-      "error"
+      }`
     );
     throw error;
   }
@@ -204,9 +215,13 @@ export async function createVideoScriptAction(values: CreateVideoScriptConfig) {
   redirect(`/history/${configId}`);
 }
 
-async function generateScriptWithAI(validated: CreateVideoScriptConfig) {
+async function generateScriptWithAI(
+  validated: CreateVideoScriptConfig,
+  generationId: string
+) {
   console.log("Generating script with AI");
-  await sendProgress("Generating script");
+  await Progress.step(generationId, "Generating script", 4, 1);
+
   return generateObject({
     model: google("gemini-1.5-pro-latest", { structuredOutputs: true }),
     schema: z.object({
@@ -224,9 +239,13 @@ async function generateScriptWithAI(validated: CreateVideoScriptConfig) {
   });
 }
 
-async function synthesizeSpeech(text: string, apiKey: string) {
+async function synthesizeSpeech(
+  text: string,
+  apiKey: string,
+  generationId: string
+) {
   console.log("Synthesizing speech");
-  await sendProgress("Synthesizing speech");
+  await Progress.step(generationId, "Synthesizing speech", 4, 2);
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
   const response = await fetch(url, {
     method: "POST",
@@ -245,12 +264,16 @@ async function generateImages(
   method: "together" | "replicate" = "together"
 ) {
   console.log("Generating images");
-  await sendProgress(`Starting generation of ${prompts.length} images`, "info");
+
+  await Progress.step(sessionId, "Generating images", 4, 3, {
+    totalImages: prompts.length,
+  });
 
   const generateAndUploadImage = async (prompt: string, index: number) => {
-    await sendProgress(
+    await Progress.info(
+      sessionId,
       `Processing image ${index + 1} of ${prompts.length}`,
-      "info"
+      { currentImage: index + 1, totalImages: prompts.length }
     );
     console.log("Creating image from prompt:", prompt);
 
@@ -259,22 +282,25 @@ async function generateImages(
         const image = await createImageFromPromptReplicate(prompt);
         const outUrl = image[0];
         const upload = await uploadImageToR2(outUrl, sessionId, prompt);
-        await sendProgress(`Completed image ${index + 1}`, "success");
+        await Progress.success(sessionId, `Completed image ${index + 1}`);
+
         return upload?.url;
       } else {
-        const image = await createImageFromPromptTogether(prompt);
+        const image = await createImageFromPromptTogether(prompt, sessionId);
         const outUrl = image?.[0]!;
         const upload = await uploadImageToR2(outUrl, sessionId, prompt);
-        await sendProgress(`Completed image ${index + 1}`, "success");
+        await Progress.success(sessionId, `Completed image ${index + 1}`);
+
         return upload?.url;
       }
     } catch (error) {
-      await sendProgress(
+      await Progress.error(
+        sessionId,
         `Failed to generate/upload image ${index + 1}: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
-        "error"
+        }`
       );
+
       throw error;
     }
   };
@@ -285,18 +311,19 @@ async function generateImages(
 
   try {
     const results = await Promise.all(imagePromises);
-    await sendProgress(
-      `Successfully generated all ${prompts.length} images`,
-      "success"
+    await Progress.success(
+      sessionId,
+      `Successfully generated all ${prompts.length} images`
     );
     return results;
   } catch (error) {
-    await sendProgress(
+    await Progress.error(
+      sessionId,
       `Failed to generate all images: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`,
-      "error"
+      }`
     );
+
     throw error;
   }
 }
@@ -396,9 +423,9 @@ async function uploadCaptionsToR2(captions: any, sessionId: string) {
   return { signedUrl, url };
 }
 
-async function generateCaptions(audioUrl: string) {
+async function generateCaptions(audioUrl: string, configId: string) {
   console.log("Generating captions");
-  await sendProgress("Generating captions");
+  await Progress.step(configId, "Generating captions", 4, 4);
   return transcriber.transcripts.transcribe({
     audio_url: audioUrl,
     speech_model: "nano",
@@ -435,6 +462,7 @@ function buildPrompt({ duration, style, topic }: CreateVideoScriptConfig) {
 
 async function retryWithBackoff<T>(
   op: () => Promise<T>,
+  generationId: string,
   maxRetries: number = 3,
   initialDelay: number = 1000
 ) {
@@ -447,41 +475,48 @@ async function retryWithBackoff<T>(
       retries++;
 
       if (retries > maxRetries) {
-        await sendProgress(
-          `Failed after ${maxRetries} retries ${
+        await Progress.error(
+          generationId,
+          `Failed after ${maxRetries} retries: ${
             error instanceof Error ? error.message : "Unknown error"
-          }`,
-          "error"
+          }`
         );
+
         throw error;
       }
 
       const delayTime = initialDelay * Math.pow(2, retries - 1);
-      await sendProgress(`Retrying in ${delayTime / 1000} seconds`, "info");
+      await Progress.info(
+        generationId,
+        `Retrying in ${delayTime / 1000} seconds`
+      );
+
       await delay(delayTime);
     }
   }
 }
 
-async function createImageFromPromptTogether(prompt: string) {
+async function createImageFromPromptTogether(
+  prompt: string,
+  generationId: string
+) {
   return imageQueue.add(async () => {
-    await sendProgress(
-      "Queued image for generation using the TogetherAI API (may take a while)",
-      "info"
+    await Progress.info(
+      generationId,
+      "Queued image for generation using the TogetherAI API (may take a while)"
     );
-
     try {
       const imageResponse = await retryWithBackoff(async () => {
-        await sendProgress(
-          "Generating image using the TogetherAI API...",
-          "info"
+        await Progress.info(
+          generationId,
+          "Generating image using the TogetherAI API..."
         );
 
         return together.images.create({
           prompt,
           model: "black-forest-labs/FLUX.1-schnell-Free",
         });
-      });
+      }, generationId);
 
       console.log("Image response:", { imageResponse });
 
@@ -491,12 +526,13 @@ async function createImageFromPromptTogether(prompt: string) {
         return d.url as unknown as string;
       });
     } catch (error) {
-      await sendProgress(
+      await Progress.error(
+        generationId,
         `Failed to generate image: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
-        "error"
+        }`
       );
+
       throw error;
     }
   });
