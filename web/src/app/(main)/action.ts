@@ -26,6 +26,7 @@ import pQueue from "p-queue";
 import { delay } from "@/lib/utils";
 import { GenerationService } from "@/lib/generation-service";
 import { Progress } from "@/lib/send-progress";
+import { buildPrompt, getSystemPrompt } from "@/lib/prompt";
 
 const {
   CF_ACCOUNT_ID,
@@ -430,34 +431,6 @@ async function generateCaptions(audioUrl: string, configId: string) {
     audio_url: audioUrl,
     speech_model: "nano",
   });
-}
-function getSystemPrompt() {
-  return `
-    You're an expert at creating scripts for short videos.
-    For each scene you give imagePrompt and textContent.
-    Given a topic, duration and style you return script in the following json schema.
-
-    {
-        "scenes": [
-            {
-                imagePrompt: "You describe the scene as an image prompt",
-                textContent: "You describe the scene here in text"
-            }
-        ]
-    }
-  `;
-}
-
-function buildPrompt({ duration, style, topic }: CreateVideoScriptConfig) {
-  return `
-    write a script to generate ${
-      duration / 1000
-    } second video on the topic: ${topic} 
-    along with ai image prompt in ${style} format.
-    For each scene give imagePrompt and textContent as fields in json format. 
-    
-    ONLY GIVE THE OUTPUT IN JSON FORMAT.
-  `;
 }
 
 async function retryWithBackoff<T>(
