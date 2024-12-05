@@ -11,7 +11,7 @@ interface ProgressMessage {
   timestamp: number;
 }
 
-export function ProgressDisplay() {
+export function ProgressDisplay({ generationId }: { generationId: string }) {
   const [messages, setMessages] = useState<ProgressMessage[]>([]);
   const [showTopBlur, setShowTopBlur] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function ProgressDisplay() {
 
     const connectSSE = () => {
       try {
-        eventSource = new EventSource("/api/progress");
+        eventSource = new EventSource(`/api/progress/${generationId}`);
 
         eventSource.onmessage = (e) => {
           try {

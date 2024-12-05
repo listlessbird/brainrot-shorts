@@ -10,7 +10,7 @@ import { Attr } from "@/components/nav/attr-nav";
 export function SideNav() {
   return (
     <div
-      className="md:w-16 lg:w-60  h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex shadow-md md:flex-col"
+      className="md:w-16 lg:w-60  h-screen flex-1 fixed border-r border-zinc-200 hidden md:flex shadow-md md:flex-col shrink-0"
       sp-layout="sidebar"
     >
       <div className="flex flex-col space-y-6 w-full">

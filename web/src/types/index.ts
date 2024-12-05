@@ -27,3 +27,13 @@ export interface GenerationState {
   status: Generation["status"];
   error?: string;
 }
+
+export type GenerationStateItems = Exclude<
+  keyof GenerationState,
+  "id" | "status" | "error"
+>;
+
+type stageCallbackMaps = Record<
+  GenerationStateItems,
+  (state: GenerationState, generationId: string) => Promise<GenerationState>
+>;

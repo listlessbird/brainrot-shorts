@@ -23,6 +23,7 @@ export default async function Layout({
             <main className="min-h-screen flex-1">
               <Header />
               <HeaderMobile />
+              <div className="md:w-16 lg:w-60" />
               <div className="space-y-8 max-w-full mx-auto pt-5 px-3 lg:pl-16">
                 {children}
               </div>

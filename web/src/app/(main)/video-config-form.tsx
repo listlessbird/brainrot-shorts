@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,10 +39,12 @@ import {
   createVideConfigSchema,
   CreateVideoScriptConfig,
 } from "@/lib/validations";
-import { useVideoConfigMutation } from "@/app/(main)/use-video-config-mutation";
 import { ProgressDisplay } from "@/app/(main)/progress-display";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { createVideoScriptAction } from "@/app/(main)/action";
+import { useGenerationStatus } from "@/hooks/use-generation-status";
+import { useRouter } from "next/navigation";
 
 const groups = [
   {
@@ -79,8 +80,13 @@ const defaultTopics = [
 ];
 
 export function VideoConfigForm() {
+  const router = useRouter();
   const [stats, showStats] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [generationId, setGenerationId] = useState<string | null>(null);
+  const [isPending, setPending] = useState(false);
+  const { data: generationStatus } = useGenerationStatus(generationId);
+
   const [value, setValue] = useLocalStorage<CreateVideoScriptConfig>(
     "video-config-form",
     {
@@ -104,17 +110,45 @@ export function VideoConfigForm() {
     setLoaded(true);
   }, [form, value]);
 
-  const { mutate, isPending } = useVideoConfigMutation();
+  useEffect(() => {
+    if (generationStatus?.status === "complete" && generationId) {
+      router.push(`/history/${generationId}`);
+    }
+  }, [generationStatus, generationId, router]);
 
   const onSubmit = async (values: CreateVideoScriptConfig) => {
     setValue(values);
     showStats(true);
-    mutate(values, {
-      onSuccess(data) {
-        console.table(data);
-        showStats(false);
-      },
-    });
+    setPending(true);
+
+    try {
+      const result = await createVideoScriptAction(values);
+      console.table(values);
+
+      if (
+        result &&
+        "generationId" in result &&
+        typeof result.generationId === "string"
+      ) {
+        console.log("Generation ID:", result.generationId);
+        setGenerationId(result.generationId);
+
+        if (result.isComplete) {
+          router.push(`/history/${result.generationId}`);
+        }
+      }
+    } catch (error) {
+      setPending(false);
+      console.error("Error submitting form:", error);
+    }
+    const generationId = await createVideoScriptAction(values);
+
+    console.table(values);
+
+    if (typeof generationId === "string") {
+      console.log("Generation ID:", generationId);
+      setGenerationId(generationId);
+    }
   };
 
   return (
@@ -242,9 +276,9 @@ export function VideoConfigForm() {
               )}
             />
 
-            {stats && (
+            {stats && generationId && (
               <div className="rounded-lg border bg-card p-4">
-                <ProgressDisplay />
+                <ProgressDisplay generationId={generationId} />
               </div>
             )}
 

@@ -186,29 +186,43 @@ export async function getGenerationByConfigId(
 ) {
   console.log("inside getGenerationByConfigId:", { configId, userGoogleId });
 
-  const q = await db
-    .select({
-      generation: generationsTable,
-      genratedScript: generatedScriptsTable,
-    })
-    .from(generationsTable)
-    .leftJoin(
-      generatedScriptsTable,
-      eq(generationsTable.scriptId, generatedScriptsTable.id)
-    )
-    .where(
-      and(
-        eq(generationsTable.configId, configId),
-        eq(generationsTable.userGoogleId, userGoogleId)
-      )
-    )
-    .limit(1);
+  // const q = await db
+  //   .select({
+  //     generation: generationsTable,
+  //     genratedScript: generatedScriptsTable,
+  //   })
+  //   .from(generationsTable)
+  //   .leftJoin(
+  //     generatedScriptsTable,
+  //     eq(generationsTable.scriptId, generatedScriptsTable.id)
+  //   )
+  //   .where(
+  //     and(
+  //       eq(generationsTable.configId, configId),
+  //       eq(generationsTable.userGoogleId, userGoogleId)
+  //     )
+  //   )
+  //   .limit(1);
 
-  console.log("inside getGenerationByConfigId:", q);
+  // console.log("inside getGenerationByConfigId:", q);
 
-  if (!q.length) return null;
+  // if (!q.length) return null;
 
-  return { ...q[0].generation, generatedScript: q[0].genratedScript };
+  // return { ...q[0].generation, generatedScript: q[0].genratedScript };
+
+  const scripts = await db.query.generationsTable.findFirst({
+    where(fields, operators) {
+      return operators.eq(fields.configId, configId);
+    },
+
+    with: {
+      generatedScript: true,
+    },
+  });
+  console.log("inside getGenerationByConfigId:", scripts);
+  if (!scripts) return null;
+
+  return { ...scripts, generatedScript: scripts.generatedScript };
 }
 
 export async function updateGenerationStatus(

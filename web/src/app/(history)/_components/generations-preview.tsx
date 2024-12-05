@@ -32,9 +32,11 @@ export function GenerationsPreview({
           <div className="relative h-48 min-w-52">
             <Image
               src={
-                Array.isArray(generation.images)
-                  ? generation.images[0]
-                  : generation.images
+                generation.images
+                  ? Array.isArray(generation.images)
+                    ? generation.images[0]
+                    : generation.images
+                  : "/sparkles-placeholder.png"
               }
               alt={generation.topic || "ongoing generation"}
               className="object-cover size-full"

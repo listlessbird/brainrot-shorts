@@ -22,6 +22,15 @@ export const generationStatusEnum = pgEnum("generation_status", [
   "failed",
 ]);
 
+export type GenerationStatus =
+  | "pending"
+  | "script_ready"
+  | "speech_ready"
+  | "images_ready"
+  | "captions_ready"
+  | "complete"
+  | "failed";
+
 export const generationsTable = pgTable("generations", {
   id: text("id").notNull().primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -114,6 +123,7 @@ export const generatedScriptsRelations = relations(
       fields: [generatedScriptsTable.configId],
       references: [configTable.configId],
     }),
+    generation: many(generationsTable),
   })
 );
 

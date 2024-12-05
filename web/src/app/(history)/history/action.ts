@@ -13,7 +13,14 @@ export async function getAllGenerationsAction() {
 
   const generations = await getAllGenerations(user.googleId);
   const presignImages = generations.map(async (generation) => {
-    const rand = Math.floor(Math.random() * generation.images.length);
+    const imageCount = generation.images?.length || 0;
+
+    if (imageCount === 0) {
+      return null;
+    }
+
+    const rand = Math.floor(Math.random() * imageCount);
+
     const key =
       generation.configId +
       "/images/" +
