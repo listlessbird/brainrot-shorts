@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, res: NextResponse) {
     return new Response(null, {
       status: 302,
       headers: {
-        Location: "/?yt_connected=true",
+        Location: "/settings/?yt_connected=true",
       },
     });
   } catch (error) {
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest, res: NextResponse) {
     return new Response(null, {
       status: 302,
       headers: {
-        Location: "/?yt_connected=false",
+        Location: "/settings/?yt_connected=false",
       },
     });
   }
