@@ -27,6 +27,7 @@ export class YoutubeService {
 
   async getTokensFromCode(code: string) {
     const { tokens } = await this.oauth2Client.getToken(code);
+    this.oauth2Client.setCredentials(tokens);
     return tokens;
   }
 

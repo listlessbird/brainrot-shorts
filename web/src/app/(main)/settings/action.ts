@@ -1,7 +1,10 @@
 "use server";
 
+import { db } from "@/db/db";
+import { youtubeCredentialsTable } from "@/db/schema";
 import { getCurrentSession } from "@/lib/auth";
 import { YoutubeService } from "@/lib/yt/yt.service";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export async function startYoutubeFlow() {
@@ -16,4 +19,30 @@ export async function startYoutubeFlow() {
   const ytService = new YoutubeService();
 
   redirect(ytService.getAuthUrl());
+}
+
+export async function disconnectYoutube() {
+  const { user } = await getCurrentSession();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .delete(youtubeCredentialsTable)
+    .where(eq(youtubeCredentialsTable.userId, user.googleId));
+
+  return { success: true };
+}
+
+export async function getYoutubeStatus() {
+  const { user } = await getCurrentSession();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const credentials = await db.query.youtubeCredentialsTable.findFirst({
+    where: eq(youtubeCredentialsTable.userId, user.googleId),
+  });
+
+  return { connected: Boolean(credentials) };
 }
