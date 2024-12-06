@@ -1,6 +1,7 @@
 import { getAllGenerationsAction } from "@/app/(history)/history/action";
 import { OnGoingGenerationsType } from "@/db/generations-fns";
 import { Generation } from "@/db/schema";
+import { HistoryQueryData } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 
 async function fetchOngoingGenerations() {
@@ -10,16 +11,6 @@ async function fetchOngoingGenerations() {
   }
   return response.json() as Promise<OnGoingGenerationsType>;
 }
-
-export type HistoryQueryData = {
-  id: string;
-  images: string[] | string;
-  configId: string;
-  topic: string | null;
-  duration: number | null;
-  status: Generation["status"];
-};
-
 export function useGenerationsQuery(initialData: HistoryQueryData[]) {
   return useQuery({
     queryKey: ["generations"],

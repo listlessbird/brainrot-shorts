@@ -3,8 +3,9 @@
 import { getAllGenerations } from "@/db/db-fns";
 import { validateRequest } from "@/lib/auth";
 import { makeSignedUrl, r2 } from "@/lib/r2";
+import { HistoryQueryData } from "@/types";
 
-export async function getAllGenerationsAction() {
+export async function getAllGenerationsAction(): Promise<HistoryQueryData[]> {
   const { user } = await validateRequest();
 
   if (!user) {
@@ -12,25 +13,32 @@ export async function getAllGenerationsAction() {
   }
 
   const generations = await getAllGenerations(user.googleId);
-  const presignImages = generations.map(async (generation) => {
-    const imageCount = generation.images?.length || 0;
 
-    if (imageCount === 0) {
-      return null;
-    }
+  const generationsWithSignedUrls = await Promise.all(
+    generations.map(async (generation) => {
+      const imageCount = generation.images?.length || 0;
+      let signedImageUrl: string | null = null;
 
-    const rand = Math.floor(Math.random() * imageCount);
+      if (imageCount > 0) {
+        const randomIndex = Math.floor(Math.random() * imageCount);
+        const imageName = generation.images[randomIndex].split("/").pop();
 
-    const key =
-      generation.configId +
-      "/images/" +
-      generation.images[rand].split("/").pop();
-    return makeSignedUrl(r2, key);
-  });
+        if (imageName) {
+          const key = `${generation.configId}/images/${imageName}`;
+          signedImageUrl = await makeSignedUrl(r2, key);
+        }
+      }
 
-  const presignedImages = await Promise.all(presignImages);
+      return {
+        id: generation.id,
+        images: signedImageUrl || [],
+        configId: generation.configId,
+        topic: generation.topic!,
+        duration: generation.duration!,
+        status: generation.status,
+      } satisfies HistoryQueryData;
+    })
+  );
 
-  return generations.map((genreation, index) => {
-    return { ...genreation, images: presignedImages[index] };
-  });
+  return generationsWithSignedUrls;
 }

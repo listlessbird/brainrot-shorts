@@ -64,7 +64,7 @@ export function ProgressDisplay({ generationId }: { generationId: string }) {
     return () => {
       eventSource?.close();
     };
-  }, []);
+  }, [generationId]);
 
   const getStatusColor = (status: ProgressMessage["status"]) => {
     switch (status) {

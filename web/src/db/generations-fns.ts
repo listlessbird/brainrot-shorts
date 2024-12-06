@@ -25,7 +25,7 @@ export async function getOngoingGenerations(userGoogleId: string) {
       status: generationsTable.status,
     })
     .from(generationsTable)
-    .leftJoin(configTable, eq(generationsTable.configId, configTable.configId))
+    .innerJoin(configTable, eq(generationsTable.configId, configTable.configId))
     .where(
       and(
         eq(generationsTable.userGoogleId, userGoogleId),

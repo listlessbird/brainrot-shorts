@@ -37,3 +37,12 @@ type stageCallbackMaps = Record<
   GenerationStateItems,
   (state: GenerationState, generationId: string) => Promise<GenerationState>
 >;
+
+export type HistoryQueryData = {
+  id: string;
+  images: string[] | string | [];
+  configId: string;
+  topic: string;
+  duration: number;
+  status: Generation["status"];
+};

@@ -20,11 +20,11 @@ export default async function Home() {
 
   return (
     <div>
-      <h1 className="scroll-m-20 text-2xl font-extrabold tracking-tight lg:text-5xl">
-        Generations
-      </h1>
       <div className="my-4 flex flex-wrap gap-2 md:gap-4 items-center justify-center">
-        <div>
+        <div className="space-y-4">
+          <h1 className="scroll-m-20 text-2xl font-extrabold tracking-tight lg:text-5xl">
+            Generations
+          </h1>
           <Suspense fallback={<Loading />}>
             <HistoryWrap userGoogleId={user.googleId} />
           </Suspense>
