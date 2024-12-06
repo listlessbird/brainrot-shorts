@@ -3,6 +3,7 @@ import { BackgroundPatterns } from "@/components/bg-pattern";
 import { Header } from "@/components/nav/header";
 import { HeaderMobile } from "@/components/nav/header-mobile";
 import { SideNav } from "@/components/nav/sidenav";
+import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/hooks/use-session";
 import { validateRequest } from "@/lib/auth";
 
@@ -16,6 +17,7 @@ export default async function Layout({
   return (
     <QueryProvider>
       <SessionProvider value={{ user: user }}>
+        <Toaster />
         <div className="min-h-screen bg-gradient-to-br from-background to-secondary relative">
           <BackgroundPatterns />
           <div className="flex relative z-10">

@@ -1,4 +1,4 @@
-import { HomeIcon, VideoIcon } from "lucide-react";
+import { HomeIcon, VideoIcon, Settings2Icon } from "lucide-react";
 export type SideNavItem = {
   title: string;
   path: string;
@@ -15,5 +15,10 @@ export const SideNavItems: SideNavItem[] = [
     title: "Generations",
     path: "/history",
     icon: <VideoIcon />,
+  },
+  {
+    title: "Settings",
+    path: "/settings",
+    icon: <Settings2Icon />,
   },
 ];
