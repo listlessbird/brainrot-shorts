@@ -98,6 +98,27 @@ export const sessionTable = pgTable("session", {
   expiresAt: timestamp("expires_at").notNull(),
 });
 
+export const youtubeCredentialsTable = pgTable("yt_credentials", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => userTable.googleId, { onDelete: "cascade" }),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  channelId: text("channel_id").notNull(),
+  createdId: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const youtubeCredentialsRelations = relations(
+  youtubeCredentialsTable,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [youtubeCredentialsTable.userId],
+      references: [userTable.googleId],
+    }),
+  })
+);
+
 export const userRelations = relations(userTable, ({ many }) => ({
   sessions: many(sessionTable),
   generations: many(generationsTable),
