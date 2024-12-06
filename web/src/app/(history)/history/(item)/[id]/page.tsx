@@ -11,8 +11,8 @@ export default async function Generation(props: {
   await validateRequest();
 
   return (
-    <>
+    <div className="max-w-4xl mx-auto">
       <GenerationViewer generationId={id} />
-    </>
+    </div>
   );
 }

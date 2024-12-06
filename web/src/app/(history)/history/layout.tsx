@@ -16,16 +16,20 @@ export default async function Layout({
   return (
     <QueryProvider>
       <SessionProvider value={{ user: user }}>
-        <div className="flex bg-gradient-to-br from-background to-secondary relative">
+        <div className="min-h-screen bg-gradient-to-br from-background to-secondary relative">
           <BackgroundPatterns />
-          <SideNav />
-          <main className="min-h-screen flex-1">
-            <Header />
-            <HeaderMobile />
-            <div className="space-y-8  max-w-2xl mx-auto pt-5  px-3">
-              {children}
+          <div className="flex relative z-10">
+            <div className="hidden md:block md:w-16 lg:w-60 h-screen fixed border-r border-zinc-200 shadow-md">
+              <SideNav />
             </div>
-          </main>
+            <div className="flex-1 w-full md:pl-16 lg:pl-60">
+              <main className="min-h-screen flex-1">
+                <Header />
+                <HeaderMobile />
+                <main className="container mx-auto px-4 py-8">{children}</main>
+              </main>
+            </div>
+          </div>
         </div>
       </SessionProvider>
     </QueryProvider>
