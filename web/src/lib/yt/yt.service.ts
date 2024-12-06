@@ -1,6 +1,8 @@
 import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import { db } from "@/db/db";
+import { generateYtStateToken } from "@/lib/yt/csrf";
+import { getYtCredentialsFromDb } from "@/db/yt-fns";
 
 const { YT_CLIENT_ID, YT_CLIENT_SECRET, NEXT_PUBLIC_BASE_URL } = process.env;
 export class YoutubeService {
@@ -14,7 +16,9 @@ export class YoutubeService {
     });
   }
 
-  getAuthUrl() {
+  async getAuthUrl() {
+    const state = await generateYtStateToken();
+
     return this.oauth2Client.generateAuthUrl({
       access_type: "offline",
       scope: [
@@ -22,6 +26,7 @@ export class YoutubeService {
         "https://www.googleapis.com/auth/youtube.readonly",
       ],
       prompt: "consent",
+      state,
     });
   }
 
@@ -48,9 +53,7 @@ export class YoutubeService {
     privacyStatus?: "public" | "private" | "unlisted";
     tags?: string[];
   }) {
-    const credentials = await db.query.youtubeCredentialsTable.findFirst({
-      where: (creds, { eq }) => eq(creds.userId, userId),
-    });
+    const credentials = await getYtCredentialsFromDb(userId);
 
     if (!credentials) {
       throw new Error("Youtube credentials not found");
@@ -69,8 +72,6 @@ export class YoutubeService {
       if (!response.ok || !response.body) {
         throw new Error("Video not found");
       }
-
-      const contentLength = response.headers.get("content-length");
 
       const shortDescription = `#Shorts\n\n${description}`;
       const shortTags = ["Shorts", "YoutubeShorts", ...tags];

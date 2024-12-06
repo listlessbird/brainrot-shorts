@@ -102,8 +102,8 @@ export const youtubeCredentialsTable = pgTable("yt_credentials", {
   userId: text("user_id")
     .primaryKey()
     .references(() => userTable.googleId, { onDelete: "cascade" }),
-  accessToken: text("access_token").notNull(),
-  refreshToken: text("refresh_token").notNull(),
+  encryptedAccessToken: text("enc_access_token").notNull(),
+  encryptedRefreshToken: text("enc_refresh_token").notNull(),
   channelId: text("channel_id").notNull(),
   createdId: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
