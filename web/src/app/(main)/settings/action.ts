@@ -18,7 +18,9 @@ export async function startYoutubeFlow() {
 
   const ytService = new YoutubeService();
 
-  redirect(ytService.getAuthUrl());
+  const authUrl = await ytService.getAuthUrl();
+
+  redirect(authUrl);
 }
 
 export async function disconnectYoutube() {
