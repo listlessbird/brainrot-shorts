@@ -11,12 +11,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence } from "framer-motion";
 import { Calendar, Clock, Download, FileText, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Generate } from "@/app/(history)/history/(item)/[id]/generate";
+import { createVideoScriptAction } from "@/app/(main)/action";
 export function GenerationViewer({ generationId }: { generationId: string }) {
+  const [isRetrying, setIsRetrying] = useState(false);
+
   const {
     data: generation,
     isLoading,
@@ -28,6 +31,37 @@ export function GenerationViewer({ generationId }: { generationId: string }) {
   const [activeTab, setActiveTab] = useState(() =>
     generation?.status === "complete" ? "content" : "progress"
   );
+
+  const {
+    topic,
+    images = [],
+    script = [],
+    speechUrl,
+    videoUrl,
+    style,
+    duration,
+    createdAt,
+  } = generation || {};
+
+  const handleRetry = useCallback(async () => {
+    try {
+      const result = await createVideoScriptAction({
+        topic: topic!,
+        duration: duration!,
+        style: style!,
+      });
+
+      if (
+        result &&
+        "generationId" in result &&
+        typeof result.generationId === "string"
+      ) {
+        setIsRetrying(true);
+      }
+    } catch (error) {
+      console.error("Error while retrying video generation:", error);
+    }
+  }, [duration, style, topic]);
 
   useEffect(() => {
     if (generation?.status === "complete") {
@@ -49,18 +83,6 @@ export function GenerationViewer({ generationId }: { generationId: string }) {
       </div>
     );
   }
-
-  const {
-    topic,
-    images = [],
-    script = [],
-    speechUrl,
-    videoUrl,
-    style,
-    duration,
-    createdAt,
-  } = generation || {};
-
   return (
     <div className="container max-w-7xl mx-auto py-8 space-y-8">
       <div className="flex items-center justify-between">
@@ -108,21 +130,37 @@ export function GenerationViewer({ generationId }: { generationId: string }) {
           </TabsTrigger>
         </TabsList>
 
-        {generation?.status !== "complete" && (
+        {generation?.status === "complete" && (
           <TabsContent value="progress" className="space-y-4">
             <Card>
               <CardContent className="p-6">
-                <ScrollArea className="h-[400px] pr-4">
-                  <AnimatePresence>
-                    {messages.map((msg, index) => (
-                      <ItemProgressIndicator
-                        key={index}
-                        message={msg.message}
-                        status={msg.status}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </ScrollArea>
+                {messages.length > 0 && isRetrying && (
+                  <ScrollArea className="h-[400px] pr-4">
+                    <AnimatePresence>
+                      {messages.map((msg, index) => (
+                        <ItemProgressIndicator
+                          key={index}
+                          message={msg.message}
+                          status={msg.status}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </ScrollArea>
+                )}
+
+                {messages.length === 0 && !isRetrying && (
+                  <div className="flex items-center justify-center p-12">
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="text-lg bg-red-500 from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg"
+                      onClick={() => handleRetry()}
+                    >
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Retry
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
