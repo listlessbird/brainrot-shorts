@@ -16,13 +16,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { uploadToYTAction } from "@/lib/yt/yt-upload.action";
 import { Youtube, Loader2 } from "lucide-react";
+import { YoutubeConnectionStatus } from "@/app/(main)/settings/yt-conn-status";
+import { Card, CardContent } from "@/components/ui/card";
 
 export function UploadToYouTube({
   videoUrl,
   defaultTitle,
+  generationId,
 }: {
   videoUrl: string;
   defaultTitle: string;
+  generationId: string;
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"details" | "uploading" | "complete">(
@@ -39,6 +43,7 @@ export function UploadToYouTube({
         videoUrl,
         title,
         description,
+        generationId,
       });
       setStep("complete");
       toast({
@@ -74,6 +79,11 @@ export function UploadToYouTube({
                 "Your video has been uploaded successfully!"}
             </DialogDescription>
           </DialogHeader>
+          <Card>
+            <CardContent className="p-2">
+              <YoutubeConnectionStatus />
+            </CardContent>
+          </Card>
           {step === "details" && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">

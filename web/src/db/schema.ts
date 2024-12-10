@@ -4,10 +4,8 @@ import {
   text,
   timestamp,
   integer,
-  varchar,
   uuid,
   pgEnum,
-  serial,
   jsonb,
 } from "drizzle-orm/pg-core";
 import { type InferSelectModel } from "drizzle-orm";
@@ -109,6 +107,32 @@ export const youtubeCredentialsTable = pgTable("yt_credentials", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const uploadedVideosTable = pgTable("uploaded_videos", {
+  id: text("id").primaryKey(), // YouTube video ID
+  userId: text("user_id")
+    .notNull()
+    .references(() => userTable.googleId, { onDelete: "cascade" }),
+  configId: text("config_id").references(() => configTable.configId, {
+    onDelete: "set null",
+  }),
+  title: text("title").notNull(),
+  description: text("description"),
+  videoUrl: text("video_url").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+export const uploadedVideosRelations = relations(
+  uploadedVideosTable,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [uploadedVideosTable.userId],
+      references: [userTable.googleId],
+    }),
+    config: one(configTable, {
+      fields: [uploadedVideosTable.configId],
+      references: [configTable.configId],
+    }),
+  })
+);
 export const youtubeCredentialsRelations = relations(
   youtubeCredentialsTable,
   ({ one }) => ({

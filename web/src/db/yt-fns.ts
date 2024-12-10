@@ -23,3 +23,24 @@ export async function getYtCredentialsFromDb(userId: string) {
     return null;
   }
 }
+
+export async function getUploadedVideosFromDb(configId: string) {
+  try {
+    const uploaded = await db.query.uploadedVideosTable.findFirst({
+      where: (fields, operators) => {
+        return operators.eq(fields.configId, configId);
+      },
+    });
+
+    if (!uploaded) return null;
+
+    return {
+      title: uploaded.title,
+      description: uploaded.description,
+      videoUrl: uploaded.videoUrl,
+    };
+  } catch (error) {
+    console.error("Error finding uploaded videos from db:", error);
+    return null;
+  }
+}

@@ -4,6 +4,7 @@ import { db } from "@/db/db";
 import { generateYtStateToken } from "@/lib/yt/csrf";
 import { getYtCredentialsFromDb } from "@/db/yt-fns";
 import { Readable } from "stream";
+import { uploadedVideosTable } from "@/db/schema";
 
 const { YT_CLIENT_ID, YT_CLIENT_SECRET, NEXT_PUBLIC_BASE_URL } = process.env;
 export class YoutubeService {
@@ -42,6 +43,7 @@ export class YoutubeService {
     title,
     description,
     userId,
+    generationId,
     privacyStatus = "public",
     tags = [],
     onProgress,
@@ -50,6 +52,7 @@ export class YoutubeService {
     title: string;
     description: string;
     userId: string;
+    generationId: string;
     privacyStatus?: "public" | "private" | "unlisted";
     tags?: string[];
     onProgress?: (progress: number) => void;
@@ -119,12 +122,22 @@ export class YoutubeService {
         onProgress(100);
       }
 
-      //   TODO: Maybe make a DB record for the upload
+      const videoId = res.data.id;
+      const shortUrl = `https://youtube.com/shorts/${videoId}`;
+
+      await db.insert(uploadedVideosTable).values({
+        id: videoId,
+        userId,
+        configId: generationId,
+        title,
+        description,
+        videoUrl: shortUrl,
+      });
 
       return {
         videoId: res.data.id,
         videoUrl: `https://www.youtube.com/watch?v=${res.data.id}`,
-        shortUrl: `https://youtube.com/shorts/${res.data.id}`,
+        shortUrl,
         status: res.data.status,
         privacyStatus: res.data?.status?.privacyStatus,
         ...res.data,

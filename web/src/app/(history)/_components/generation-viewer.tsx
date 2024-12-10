@@ -4,6 +4,7 @@ import { ItemProgressIndicator } from "@/app/(history)/_components/item-progress
 import {
   useGenerationProgress,
   useGenerationQuery,
+  useUploadedVideos,
 } from "@/app/(history)/history/(item)/[id]/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +19,9 @@ import { cn } from "@/lib/utils";
 import { Generate } from "@/app/(history)/history/(item)/[id]/generate";
 import { createVideoScriptAction } from "@/app/(main)/action";
 import { UploadToYouTube } from "@/app/(history)/_components/upload-to-yt";
+import { Badge } from "@/components/ui/badge";
+import { FaYoutube } from "react-icons/fa6";
+import Link from "next/link";
 export function GenerationViewer({ generationId }: { generationId: string }) {
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -28,6 +32,11 @@ export function GenerationViewer({ generationId }: { generationId: string }) {
   } = useGenerationQuery(generationId);
 
   const { messages, status } = useGenerationProgress(generationId);
+
+  const { data: uploadedVideo } = useUploadedVideos(
+    generationId,
+    generation?.status === "complete" || false
+  );
 
   const [activeTab, setActiveTab] = useState(() =>
     generation?.status === "complete" ? "content" : "progress"
@@ -88,7 +97,9 @@ export function GenerationViewer({ generationId }: { generationId: string }) {
     <div className="container max-w-7xl mx-auto py-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-bold capitalize">{topic}</h1>
-        <Progress value={progress} className="w-32" />
+        {generation?.status !== "complete" && (
+          <Progress value={progress} className="w-32" />
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -215,11 +226,39 @@ export function GenerationViewer({ generationId }: { generationId: string }) {
               >
                 <source src={videoUrl!} type="video/mp4" />
               </video>
-              <UploadToYouTube defaultTitle={topic!} videoUrl={videoUrl!} />
+              <div className="my-2">
+                {!uploadedVideo?.videoUrl && (
+                  <UploadToYouTube
+                    defaultTitle={topic!}
+                    videoUrl={videoUrl!}
+                    generationId={generationId}
+                  />
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {uploadedVideo && (
+        <Card>
+          <CardContent className="p-6">
+            <Link
+              className="contents"
+              href={uploadedVideo.videoUrl}
+              target="_blank"
+            >
+              <Badge className="py-2">
+                <FaYoutube className="mr-2 h-4 w-4" />
+                <span className="text-sm mr-2">/</span>
+                <p className="text-sm lowercase">
+                  {uploadedVideo.videoUrl.split("/").pop()}
+                </p>
+              </Badge>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {!videoUrl && generation?.status === "complete" && (
         <Generate asset={generation} />
