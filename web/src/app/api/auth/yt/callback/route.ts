@@ -4,9 +4,9 @@ import { getCurrentSession } from "@/lib/auth";
 import { validateYtStateToken } from "@/lib/yt/csrf";
 import { encrypt } from "@/lib/yt/encrypt";
 import { YoutubeService } from "@/lib/yt/yt.service";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-export async function GET(req: NextRequest, res: NextResponse) {
+export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
 
