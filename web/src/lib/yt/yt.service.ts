@@ -3,6 +3,7 @@ import { google } from "googleapis";
 import { db } from "@/db/db";
 import { generateYtStateToken } from "@/lib/yt/csrf";
 import { getYtCredentialsFromDb } from "@/db/yt-fns";
+import { Readable } from "stream";
 
 const { YT_CLIENT_ID, YT_CLIENT_SECRET, NEXT_PUBLIC_BASE_URL } = process.env;
 export class YoutubeService {
@@ -40,18 +41,18 @@ export class YoutubeService {
     videoUrl,
     title,
     description,
-    generationId,
     userId,
     privacyStatus = "public",
     tags = [],
+    onProgress,
   }: {
     videoUrl: string;
     title: string;
     description: string;
-    generationId: string;
     userId: string;
     privacyStatus?: "public" | "private" | "unlisted";
     tags?: string[];
+    onProgress?: (progress: number) => void;
   }) {
     const credentials = await getYtCredentialsFromDb(userId);
 
@@ -59,10 +60,18 @@ export class YoutubeService {
       throw new Error("Youtube credentials not found");
     }
 
+    console.log("[YTUpload] using credentials", credentials);
+
     this.oauth2Client.setCredentials({
       access_token: credentials.accessToken,
       refresh_token: credentials.refreshToken,
     });
+
+    const newAccessToken = await this.oauth2Client.refreshAccessToken();
+
+    console.log("[YTUpload] new access token", newAccessToken);
+
+    this.oauth2Client.setCredentials(newAccessToken.credentials);
 
     const yt = google.youtube({ version: "v3", auth: this.oauth2Client });
 
@@ -72,6 +81,9 @@ export class YoutubeService {
       if (!response.ok || !response.body) {
         throw new Error("Video not found");
       }
+
+      // @ts-ignore
+      const readable = Readable.fromWeb(response.body);
 
       const shortDescription = `#Shorts\n\n${description}`;
       const shortTags = ["Shorts", "YoutubeShorts", ...tags];
@@ -91,14 +103,20 @@ export class YoutubeService {
           },
         },
         media: {
-          body: response.body,
+          body: readable,
         },
       });
+
+      console.log("[YTUpload] response", res);
 
       if (!res.data.id) {
         throw new Error(
           "Failed to upload video or the video is uploaded but the id is not returned"
         );
+      }
+
+      if (onProgress) {
+        onProgress(100);
       }
 
       //   TODO: Maybe make a DB record for the upload

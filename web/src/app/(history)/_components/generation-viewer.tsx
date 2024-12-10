@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Generate } from "@/app/(history)/history/(item)/[id]/generate";
 import { createVideoScriptAction } from "@/app/(main)/action";
+import { UploadToYouTube } from "@/app/(history)/_components/upload-to-yt";
 export function GenerationViewer({ generationId }: { generationId: string }) {
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -214,6 +215,7 @@ export function GenerationViewer({ generationId }: { generationId: string }) {
               >
                 <source src={videoUrl!} type="video/mp4" />
               </video>
+              <UploadToYouTube defaultTitle={topic!} videoUrl={videoUrl!} />
             </CardContent>
           </Card>
         </TabsContent>
