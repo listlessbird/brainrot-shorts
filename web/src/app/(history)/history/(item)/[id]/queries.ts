@@ -1,6 +1,7 @@
 import { getGenerationAction } from "@/app/(history)/history/(item)/[id]/get-generation-action";
 import { Generation } from "@/db/schema";
 import { ProgressUpdate } from "@/lib/send-progress";
+import { getUploaded } from "@/lib/yt/yt-upload.action";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -9,8 +10,17 @@ export function useGenerationQuery(id: string) {
     queryKey: ["generation-item", id],
     queryFn: () => getGenerationAction(id),
     refetchInterval: (query) => {
-      return query.state.data?.status === "complete" ? false : 5 * 1000;
+      return query.state.data?.status === "complete" ? false : 10 * 1000;
     },
+  });
+}
+
+export function useUploadedVideos(configId: string, isComplete: boolean) {
+  return useQuery({
+    queryKey: ["uploaded-videos", configId],
+    queryFn: () => getUploaded(configId),
+    refetchInterval: 5 * 1000,
+    enabled: isComplete,
   });
 }
 
