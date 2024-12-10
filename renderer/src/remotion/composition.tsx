@@ -59,13 +59,19 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
 
   const getTotalDuration = () => {
     if (audioDuration) {
-      return Math.max(
-        captions[captions.length - 1].end,
-        audioDuration * 1000,
-        script.length * 5000
+      return Math.min(
+        60000,
+        Math.max(
+          captions[captions.length - 1].end,
+          audioDuration * 1000,
+          script.length * 5000
+        )
       );
     }
-    return Math.max(captions[captions.length - 1].end, script.length * 5000);
+    return Math.min(
+      60000,
+      Math.max(captions[captions.length - 1].end, script.length * 5000)
+    );
   };
 
   const getDurationInFrames = () => {
@@ -117,19 +123,27 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: "#1a1a1a" }}>
       <Sequence from={0} durationInFrames={90}>
-        <h1
+        <div
           style={{
-            fontSize: 60,
-            fontFamily: fontBold,
-            textAlign: "center",
-            position: "absolute",
-            top: "40%",
-            width: "100%",
-            color: "white",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: "0 20px",
           }}
         >
-          {topic}
-        </h1>
+          <h1
+            style={{
+              fontSize: 48,
+              fontFamily: fontBold,
+              textAlign: "center",
+              color: "white",
+              lineHeight: 1.2,
+            }}
+          >
+            {topic}
+          </h1>
+        </div>
       </Sequence>
 
       {images.map((image, index) => {
@@ -140,16 +154,21 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
             from={0}
             durationInFrames={getDurationInFrames()}
           >
-            <Img
-              src={image}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                opacity: opacity * fadeOutOpacity,
-                transform: `scale(${scale})`,
-              }}
-            />
+            <div
+              style={{ width: "100%", height: "100%", position: "relative" }}
+            >
+              <Img
+                src={image}
+                style={{
+                  position: "absolute",
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  opacity: opacity * fadeOutOpacity,
+                  transform: `scale(${scale})`,
+                }}
+              />
+            </div>
           </Sequence>
         );
       })}
@@ -160,22 +179,24 @@ export const VideoComponent: React.FC<VideoComponentProps> = ({
         <div
           style={{
             position: "absolute",
-            bottom: 50,
-            left: 0,
-            right: 0,
+            bottom: 80,
+            left: 20,
+            right: 20,
             textAlign: "center",
             backgroundColor: "rgba(0, 0, 0, 0.7)",
-            padding: 20,
+            padding: 16,
+            borderRadius: 12,
             opacity: fadeOutOpacity,
           }}
         >
           <p
             style={{
               color: "white",
-              fontSize: 36,
+              fontSize: 24,
               fontFamily: fontNormal,
               margin: 0,
               textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
+              lineHeight: 1.4,
             }}
           >
             {currentCaption.text}
@@ -193,15 +214,18 @@ export const Root: React.FC = () => {
       component={VideoComponent}
       durationInFrames={300}
       fps={30}
-      width={1920}
-      height={1080}
+      width={1080} // 9:16 aspect ratio
+      height={1920}
       defaultProps={defaultProps}
       calculateMetadata={async ({ props }) => {
         const audioDuration = await getAudioDurationInSeconds(props.speechUrl);
-        const durationInSeconds = Math.max(
-          props.captions[props.captions.length - 1].end / 1000,
-          audioDuration,
-          props.script.length * 5
+        const durationInSeconds = Math.min(
+          60,
+          Math.max(
+            props.captions[props.captions.length - 1].end / 1000,
+            audioDuration,
+            props.script.length * 5
+          )
         );
         return {
           durationInFrames: Math.ceil(durationInSeconds * 30),
