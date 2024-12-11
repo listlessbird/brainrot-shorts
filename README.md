@@ -70,6 +70,7 @@ Sparkles is a web application that allows users to create short-form videos usin
 - Generate speech audio from the script
 - Render final video with synchronized audio and images
 - View and manage generated videos
+- Directly upload to youtube from the app itself
 
 ## Deployment
 
